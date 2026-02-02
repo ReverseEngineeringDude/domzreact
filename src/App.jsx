@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, X, Plus, Minus, ArrowRight, Settings, Trash2, Upload, Loader, Lock, LogOut } from 'lucide-react';
+/* ... imports ... */
+
+
+
+
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "firebase/firestore";
@@ -28,6 +33,22 @@ const useProducts = () => {
   }, []);
 
   return { products, loading };
+};
+
+const useCoupons = () => {
+  const [coupons, setCoupons] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, "coupons"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  return { coupons, loading };
 };
 
 const useAuth = () => {
@@ -80,6 +101,7 @@ const MagneticButton = ({ children, className, onClick, ...props }) => (
 // ... (Navbar, Hero, Footer, StoreLayout components remain largely the same visually)
 
 // Re-using Navbar/Hero/Footer structure to ensure concise file
+// Re-using Navbar/Hero/Footer structure
 const Navbar = ({ cartCount, onOpenCart }) => {
   const { scrollY } = useScroll();
   const bgOpacity = useTransform(scrollY, [0, 100], [0, 0.8]);
@@ -96,7 +118,8 @@ const Navbar = ({ cartCount, onOpenCart }) => {
         </motion.h1>
       </Link>
       <div className="flex gap-4 items-center">
-        {/* Admin Link Hidden: Access via /admin manually */}
+        {/* Admin Link Hidden */}
+
         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} onClick={onOpenCart} className="relative p-3 rounded-full bg-white/40 border border-white/60 shadow-sm backdrop-blur-md">
           <ShoppingBag className="w-5 h-5 text-charcoal" />
           {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-sage text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">{cartCount}</span>}
@@ -123,17 +146,17 @@ const Hero = () => {
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
         {/* Text Side - Glass Card */}
         <motion.div style={{ y: yText, opacity }} className="relative">
-          <div className="absolute -inset-4 bg-white/30 backdrop-blur-xl rounded-[2rem] -z-10 border border-white/50 shadow-2xl skew-y-1" />
+          <div className="absolute -inset-4 bg-white/30 backdrop-blur-xl rounded-[2rem] -z-10 border border-white/50 shadow-2xl skew-y-1 dark:bg-white/5 dark:border-white/10" />
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-8 md:p-12">
-            <span className="inline-block py-2 px-4 bg-charcoal text-white rounded-full text-xs uppercase tracking-[0.3em] mb-8 font-sans shadow-lg">Est. 2026</span>
+            <span className="inline-block py-2 px-4 bg-charcoal text-white rounded-full text-xs uppercase tracking-[0.3em] mb-8 font-sans shadow-lg">Est. 2025</span>
             <h2 className="text-6xl md:text-8xl font-bold text-charcoal mb-6 tracking-tight leading-[0.9] font-serif">
-              Zero <br />
+              Domz <br />
               <span className="italic font-light text-sage/90 relative">
-                Gravity
+                Naturelle
                 <motion.svg initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, delay: 0.5 }} className="absolute -bottom-2 left-0 w-full h-3 text-sage" viewBox="0 0 100 10"><path d="M0 5 Q 50 10 100 5" fill="transparent" stroke="currentColor" strokeWidth="2" /></motion.svg>
               </span>
             </h2>
-            <p className="text-lg md:text-xl text-charcoal/70 max-w-lg leading-relaxed font-light mb-10 border-l-2 border-sage pl-6">
+            <p className="text-lg md:text-xl text-charcoal/70 max-w-lg leading-relaxed font-light mb-10 border-l-2 border-sage pl-6 dark:text-bone/70">
               Experience skincare that feels lighter than air. Pure, organic essence lifted by nature.
             </p>
             <div className="flex gap-4">
@@ -161,7 +184,7 @@ const Hero = () => {
       </div>
 
       {/* Scroll Indicator */}
-      <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }} className="absolute bottom-10 left-1/2 -translate-x-1/2 text-charcoal/30 flex flex-col items-center gap-2">
+      <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }} className="absolute bottom-10 left-1/2 -translate-x-1/2 text-charcoal/30 flex flex-col items-center gap-2 dark:text-bone/20">
         <span className="text-[10px] uppercase tracking-widest">Scroll</span>
         <div className="w-[1px] h-12 bg-gradient-to-b from-charcoal/30 to-transparent" />
       </motion.div>
@@ -172,7 +195,7 @@ const Hero = () => {
 
 const Footer = () => (
   <footer className="py-8 text-center text-charcoal/30 text-xs font-sans font-medium uppercase tracking-widest border-t border-charcoal/5">
-    <p>&copy; 2026 Domz Naturelle. Crafted with &hearts; and Gravity.</p>
+    <p>&copy; 2026 Domz Naturelle. Crafted with &hearts; by Domz.</p>
   </footer>
 );
 
@@ -233,14 +256,29 @@ const LoginPage = () => {
 // --- Admin Dashboard ---
 const AdminDashboard = () => {
   const { logout, user } = useAuth();
-  const { products, loading } = useProducts();
+  const { products, loading: productsLoading } = useProducts();
+  const { coupons, loading: couponsLoading } = useCoupons();
+
+  const [activeTab, setActiveTab] = useState("products"); // 'products' or 'coupons'
+
+  // Product State
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [desc, setDesc] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [corsError, setCorsError] = useState(false); // New State
+
+  // Coupon State
+  const [couponCode, setCouponCode] = useState("");
+  const [adminName, setAdminName] = useState("");
+  const [adminNumber, setAdminNumber] = useState("8590319003");
+  const [discountAmount, setDiscountAmount] = useState("");
+
+
+  /* --- DEBUG LOGGING STATE --- */
+  const [logs, setLogs] = useState([]);
+  const addLog = (msg) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -248,10 +286,6 @@ const AdminDashboard = () => {
     setImageFile(file);
     setPreviewUrl(URL.createObjectURL(file));
   };
-
-  /* --- DEBUG LOGGING STATE --- */
-  const [logs, setLogs] = useState([]);
-  const addLog = (msg) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
 
   /* --- IMAGE PROCESSING --- */
   const compressImage = (file) => {
@@ -280,7 +314,7 @@ const AdminDashboard = () => {
     });
   };
 
-  const handleAdd = async (e) => {
+  const handleAddProduct = async (e) => {
     e.preventDefault();
     if (!imageFile) { alert("Please select an image"); return; }
     if (!user) { alert("You must be logged in!"); return; }
@@ -318,10 +352,37 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleAddCoupon = async (e) => {
+    e.preventDefault();
+    try {
+      await addDoc(collection(db, "coupons"), {
+        code: couponCode.trim(),
+        adminName,
+        adminNumber,
+        discountAmount: parseFloat(discountAmount),
+        createdAt: serverTimestamp()
+      });
+      setCouponCode(""); setAdminName(""); setAdminNumber("8590319003"); setDiscountAmount("");
+      alert("Coupon Created!");
+    } catch (err) {
+      alert("Error creating coupon: " + err.message);
+    }
+  };
+
+  const handleDeleteProduct = async (id) => {
     if (confirm("Delete this essence?")) {
       try {
         await deleteDoc(doc(db, "products", id));
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+  };
+
+  const handleDeleteCoupon = async (id) => {
+    if (confirm("Delete this coupon?")) {
+      try {
+        await deleteDoc(doc(db, "coupons", id));
       } catch (e) {
         alert(e.message);
       }
@@ -335,7 +396,8 @@ const AdminDashboard = () => {
         <h2 className="text-2xl font-serif font-bold mb-10">Domz Admin</h2>
         <div className="text-xs opacity-50 mb-4">User: {user?.email}</div>
         <nav className="flex-1 space-y-2">
-          <div className="p-3 bg-white/10 rounded-lg cursor-pointer">Products</div>
+          <div onClick={() => setActiveTab("products")} className={cn("p-3 rounded-lg cursor-pointer transition-colors", activeTab === "products" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Products</div>
+          <div onClick={() => setActiveTab("coupons")} className={cn("p-3 rounded-lg cursor-pointer transition-colors", activeTab === "coupons" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Coupons</div>
         </nav>
         <button onClick={logout} className="flex items-center gap-2 text-white/50 hover:text-white mt-auto">
           <LogOut className="w-4 h-4" /> Logout
@@ -349,76 +411,135 @@ const AdminDashboard = () => {
           <button onClick={logout}><LogOut className="w-5 h-5 text-charcoal" /></button>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Add Product Form */}
-          <div className="lg:col-span-1">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 sticky top-8">
-              <h3 className="text-lg font-bold text-charcoal mb-4">Add New Essence</h3>
-              <form onSubmit={handleAdd} className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Name</label>
-                  <input value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Price</label>
-                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Description</label>
-                  <textarea value={desc} onChange={e => setDesc(e.target.value)} required rows={3} className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
-                </div>
+        {/* Mobile Tabs */}
+        <div className="flex gap-4 mb-6 md:hidden">
+          <button onClick={() => setActiveTab("products")} className={cn("px-4 py-2 rounded-full font-bold text-sm", activeTab === "products" ? "bg-charcoal text-white" : "bg-white text-charcoal")}>Products</button>
+          <button onClick={() => setActiveTab("coupons")} className={cn("px-4 py-2 rounded-full font-bold text-sm", activeTab === "coupons" ? "bg-charcoal text-white" : "bg-white text-charcoal")}>Coupons</button>
+        </div>
 
-                <div className="p-4 border-2 border-dashed border-stone-200 rounded-xl hover:bg-stone-50 transition-colors text-center cursor-pointer relative overflow-hidden">
-                  <input type="file" accept="image/*" onChange={handleFileSelect} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                  {previewUrl ? (
-                    <div className="relative z-0">
-                      <img src={previewUrl} className="w-full h-32 object-cover rounded-lg" />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-xs font-bold">Change Image</div>
-                    </div>
-                  ) : (
-                    <div className="text-charcoal/40 text-xs flex flex-col items-center gap-2 py-4"><Upload className="w-6 h-6" /> Upload to Storage</div>
-                  )}
-                </div>
+        {activeTab === "products" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Add Product Form */}
+            <div className="lg:col-span-1">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 sticky top-8">
+                <h3 className="text-lg font-bold text-charcoal mb-4">Add New Essence</h3>
+                <form onSubmit={handleAddProduct} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Name</label>
+                    <input value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Price</label>
+                    <input type="number" value={price} onChange={e => setPrice(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Description</label>
+                    <textarea value={desc} onChange={e => setDesc(e.target.value)} required rows={3} className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                  </div>
 
-                <button disabled={uploading} type="submit" className="w-full py-3 bg-charcoal text-white font-bold rounded-lg hover:bg-sage transition-colors disabled:opacity-50">
-                  {uploading ? "Uploading..." : "Publish Product"}
-                </button>
-              </form>
+                  <div className="p-4 border-2 border-dashed border-stone-200 rounded-xl hover:bg-stone-50 transition-colors text-center cursor-pointer relative overflow-hidden">
+                    <input type="file" accept="image/*" onChange={handleFileSelect} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                    {previewUrl ? (
+                      <div className="relative z-0">
+                        <img src={previewUrl} className="w-full h-32 object-cover rounded-lg" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-xs font-bold">Change Image</div>
+                      </div>
+                    ) : (
+                      <div className="text-charcoal/40 text-xs flex flex-col items-center gap-2 py-4"><Upload className="w-6 h-6" /> Upload to Storage</div>
+                    )}
+                  </div>
 
-              {/* Debug Logs */}
-              {logs.length > 0 && (
-                <div className="mt-6 p-4 bg-black/5 rounded-lg text-xs font-mono text-charcoal/80 max-h-40 overflow-y-auto border border-charcoal/10">
-                  <div className="font-bold mb-2">Debug Console</div>
-                  {logs.map((log, i) => <div key={i}>{log}</div>)}
+                  <button disabled={uploading} type="submit" className="w-full py-3 bg-charcoal text-white font-bold rounded-lg hover:bg-sage transition-colors disabled:opacity-50">
+                    {uploading ? "Uploading..." : "Publish Product"}
+                  </button>
+                </form>
+
+                {/* Debug Logs */}
+                {logs.length > 0 && (
+                  <div className="mt-6 p-4 bg-black/5 rounded-lg text-xs font-mono text-charcoal/80 max-h-40 overflow-y-auto border border-charcoal/10">
+                    <div className="font-bold mb-2">Debug Console</div>
+                    {logs.map((log, i) => <div key={i}>{log}</div>)}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Product List */}
+            <div className="lg:col-span-2">
+              <h3 className="text-lg font-bold text-charcoal mb-4">Inventory ({products.length})</h3>
+              {productsLoading ? <div className="text-center py-10"><Loader className="animate-spin inline-block text-charcoal/30" /></div> : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {products.map(p => (
+                    <motion.div layout key={p.id} className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex items-center gap-4 group">
+                      <div className="w-16 h-16 bg-stone-100 rounded-lg overflow-hidden shrink-0 border border-stone-100">
+                        {p.image ? <img src={p.image} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-stone-200" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-charcoal truncate">{p.name}</h4>
+                        <p className="text-xs text-charcoal/50 line-clamp-1">{p.description}</p>
+                        <p className="text-sage font-bold mt-1">₹{p.price}</p>
+                      </div>
+                      <button onClick={() => handleDeleteProduct(p.id)} className="p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </motion.div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
+        )}
 
-          {/* Product List */}
-          <div className="lg:col-span-2">
-            <h3 className="text-lg font-bold text-charcoal mb-4">Inventory ({products.length})</h3>
-            {loading ? <div className="text-center py-10"><Loader className="animate-spin inline-block text-charcoal/30" /></div> : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {products.map(p => (
-                  <motion.div layout key={p.id} className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex items-center gap-4 group">
-                    <div className="w-16 h-16 bg-stone-100 rounded-lg overflow-hidden shrink-0 border border-stone-100">
-                      {p.image ? <img src={p.image} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-stone-200" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-charcoal truncate">{p.name}</h4>
-                      <p className="text-xs text-charcoal/50 line-clamp-1">{p.description}</p>
-                      <p className="text-sage font-bold mt-1">₹{p.price}</p>
-                    </div>
-                    <button onClick={() => handleDelete(p.id)} className="p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </motion.div>
-                ))}
+        {activeTab === "coupons" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Add Coupon Form */}
+            <div className="lg:col-span-1">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 sticky top-8">
+                <h3 className="text-lg font-bold text-charcoal mb-4">Add Coupon</h3>
+                <form onSubmit={handleAddCoupon} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Coupon Code</label>
+                    <input value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="e.g. SALE50" required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Admin Name</label>
+                    <input value={adminName} onChange={e => setAdminName(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Admin Phone Number</label>
+                    <input value={adminNumber} onChange={e => setAdminNumber(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Discount Amount (₹)</label>
+                    <input type="number" value={discountAmount} onChange={e => setDiscountAmount(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                  </div>
+                  <button type="submit" className="w-full py-3 bg-charcoal text-white font-bold rounded-lg hover:bg-sage transition-colors">Create Coupon</button>
+                </form>
               </div>
-            )}
+            </div>
+
+            {/* Coupon List */}
+            <div className="lg:col-span-2">
+              <h3 className="text-lg font-bold text-charcoal mb-4">Active Coupons ({coupons.length})</h3>
+              {couponsLoading ? <div className="text-center py-10"><Loader className="animate-spin inline-block text-charcoal/30" /></div> : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {coupons.map(c => (
+                    <div key={c.id} className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-charcoal">{c.code}</h4>
+                        <p className="text-xs text-charcoal/50">Admin: {c.adminName} ({c.adminNumber})</p>
+                        <p className="text-sage font-bold font-xs">Discount: ₹{c.discountAmount}</p>
+                      </div>
+                      <button onClick={() => handleDeleteCoupon(c.id)} className="p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
@@ -431,6 +552,186 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// --- Checkout Modal ---
+const CheckoutModal = ({ isOpen, onClose, onConfirm, initialData, coupons }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    city: "",
+    zip: "",
+    ...initialData
+  });
+
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState("");
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({ ...prev, ...initialData }));
+    }
+    // Reset coupon state when modal opens/closes
+    if (isOpen) {
+      setCouponCode("");
+      setAppliedCoupon(null);
+      setCouponError("");
+    }
+  }, [initialData, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyCoupon = () => {
+    setCouponError("");
+    setAppliedCoupon(null);
+    if (!couponCode.trim()) return;
+
+    const coupon = coupons.find(c => c.code === couponCode.trim());
+    if (coupon) {
+      setAppliedCoupon(coupon);
+    } else {
+      setCouponError("Invalid Coupon Code");
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.phone || !formData.address) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+    onConfirm(formData, appliedCoupon);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-charcoal/60 backdrop-blur-sm"
+      />
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="relative bg-bone w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-white/50 max-h-[90vh] overflow-y-auto"
+      >
+        <div className="bg-white/40 backdrop-blur-xl p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-serif font-bold text-charcoal">Shipping & Offers</h2>
+            <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">Full Name *</label>
+              <input
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Jane Doe"
+                className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all placeholder:text-charcoal/20"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">Phone Number *</label>
+              <input
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+91 98765 43210"
+                className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all placeholder:text-charcoal/20"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">Address *</label>
+              <textarea
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Street, Building, Floor..."
+                rows={2}
+                className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all placeholder:text-charcoal/20"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">City</label>
+                <input
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">ZIP / Postal</label>
+                <input
+                  name="zip"
+                  value={formData.zip}
+                  onChange={handleChange}
+                  className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Coupon Section */}
+            <div className="pt-2 border-t border-charcoal/10">
+              <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">Coupon Code</label>
+              <div className="flex gap-2">
+                <input
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  placeholder="Enter Code"
+                  className="flex-1 p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all placeholder:text-charcoal/20"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  className="px-4 py-2 bg-charcoal text-white rounded-xl text-sm font-bold hover:bg-sage transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+              {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
+              {appliedCoupon && (
+                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex justify-between">
+                  <span>Coupon Applied: {appliedCoupon.code}</span>
+                  <span className="font-bold">-₹{appliedCoupon.discountAmount}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4">
+              <button
+                type="submit"
+                className="w-full py-4 bg-charcoal text-white font-bold rounded-xl hover:bg-sage transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              >
+                Confirm & Order via WhatsApp <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+
 const StorePage = () => {
   const [cart, setCart] = useState(() => {
     try {
@@ -439,7 +740,17 @@ const StorePage = () => {
     } catch { return []; }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { products, loading } = useProducts();
+  const { coupons } = useCoupons(); // Load coupons for user to check
+
+  // Load saved shipping details
+  const [shippingDetails, setShippingDetails] = useState(() => {
+    try {
+      const saved = localStorage.getItem('domz_shipping');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
 
   useEffect(() => {
     localStorage.setItem('domz_cart', JSON.stringify(cart));
@@ -464,7 +775,29 @@ const StorePage = () => {
   // Calculate total for rendering
   const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-  const handleCheckout = () => {
+  const initiateCheckout = () => {
+    if (cart.length === 0) return;
+    setIsCartOpen(false); // Close cart drawer
+    setIsCheckoutOpen(true); // Open shipping modal
+  };
+
+  const handleFinalCheckout = (formData, appliedCoupon) => {
+    // Save details
+    setShippingDetails(formData);
+    localStorage.setItem('domz_shipping', JSON.stringify(formData));
+    setIsCheckoutOpen(false);
+
+    // Calculate Final Total
+    let finalTotal = total;
+    let discountMsg = "";
+    if (appliedCoupon && appliedCoupon.discountAmount) {
+      finalTotal = Math.max(0, total - appliedCoupon.discountAmount);
+      discountMsg = `(Discounted from ₹${total} by Coupon ${appliedCoupon.code})`;
+    }
+
+    // Determine WhatsApp Number - ALWAYS OWNER
+    const targetNumber = "8590319003";
+
     // Header
     let msg = `Hello Domz Naturelle, I would like to place an order:%0a%0a`;
 
@@ -472,19 +805,47 @@ const StorePage = () => {
     cart.forEach(item => {
       msg += `Item: ${item.name}%0a`;
       msg += `Qty: ${item.quantity}%0a`;
-      msg += `Price: ₹${item.price} ea%0a`;
+      msg += `Price: ₹${item.price} %0a`;
       msg += `--------------------------------%0a`;
     });
 
     // Footer
-    msg += `%0a*Total Price: ₹${total}*`;
+    msg += `%0a*Total Price: ₹${finalTotal}* ${discountMsg}%0a`;
 
-    window.open(`https://wa.me/918590319003?text=${msg}`, '_blank');
+    // Shipping Details
+    msg += `%0a*Shipping Details:*%0a`;
+    msg += `Name: ${formData.name}%0a`;
+    msg += `Phone: ${formData.phone}%0a`;
+    msg += `Address: ${formData.address}%0a`;
+    if (formData.city) msg += `City: ${formData.city}%0a`;
+    if (formData.zip) msg += `ZIP: ${formData.zip}%0a`;
+
+    if (appliedCoupon) {
+      msg += `%0a*Coupon Applied:* ${appliedCoupon.code}%0a`;
+      msg += `Coupon Admin name : ${appliedCoupon.adminName}%0a`;
+      msg += `ADMIN Contact Number: ${appliedCoupon.adminNumber}%0a`;
+    }
+
+    window.open(`https://wa.me/91${targetNumber}?text=${msg}`, '_blank');
   };
 
   return (
     <div className="min-h-screen bg-bone font-serif text-charcoal selection:bg-sage/20 overflow-x-hidden">
       <Navbar cartCount={cart.reduce((a, b) => a + b.quantity, 0)} onOpenCart={() => setIsCartOpen(true)} />
+
+      <AnimatePresence>
+        {isCheckoutOpen && (
+          <CheckoutModal
+            isOpen={isCheckoutOpen}
+            onClose={() => setIsCheckoutOpen(false)}
+            onConfirm={handleFinalCheckout}
+            initialData={shippingDetails}
+            coupons={coupons}
+          />
+        )}
+      </AnimatePresence>
+
+
       <main>
         <Hero />
         <section className="px-6 py-32 md:px-12 max-w-7xl mx-auto relative">
@@ -531,7 +892,7 @@ const StorePage = () => {
               </div>
               <div className="mt-8 pt-8 border-t border-charcoal/10">
                 <div className="flex justify-between text-xl font-bold mb-6"><span>Total</span><span>₹{total}</span></div>
-                <button onClick={handleCheckout} className="w-full py-4 bg-charcoal text-white rounded-xl hover:bg-sage transition-colors">Checkout WhatsApp</button>
+                <button onClick={initiateCheckout} className="w-full py-4 bg-charcoal text-white rounded-xl hover:bg-sage transition-colors">Checkout WhatsApp</button>
               </div>
             </motion.div>
           </>
