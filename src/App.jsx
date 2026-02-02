@@ -1,8 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { HashRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
+
+// ... (existing imports)
+
+export default function App() {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<StorePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </HashRouter>
+  );
+}
 import { useGSAP } from "@gsap/react";
 import { ShoppingBag, X, Plus, Minus, ArrowRight, Settings, Trash2, Upload, Loader, Lock, LogOut } from 'lucide-react';
 import { clsx } from 'clsx';
