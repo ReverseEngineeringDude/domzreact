@@ -414,7 +414,7 @@ const AdminDashboard = () => {
   // Coupon State
   const [couponCode, setCouponCode] = useState("");
   const [adminName, setAdminName] = useState("");
-  const [adminNumber, setAdminNumber] = useState("8590319003");
+  const [adminNumber, setAdminNumber] = useState("8590985286");
   const [discountAmount, setDiscountAmount] = useState("");
 
 
@@ -504,7 +504,7 @@ const AdminDashboard = () => {
         discountAmount: parseFloat(discountAmount),
         createdAt: serverTimestamp()
       });
-      setCouponCode(""); setAdminName(""); setAdminNumber("8590319003"); setDiscountAmount("");
+      setCouponCode(""); setAdminName(""); setAdminNumber("8590985286"); setDiscountAmount("");
       alert("Coupon Created!");
     } catch (err) {
       alert("Error creating coupon: " + err.message);
@@ -873,7 +873,7 @@ const StorePage = () => {
     }
 
     // Determine WhatsApp Number - ALWAYS OWNER
-    const targetNumber = "8590319003";
+    const targetNumber = "8590985286";
 
     // Header
     let msg = `Hello Domz Naturelle, I would like to place an order:%0a%0a`;
