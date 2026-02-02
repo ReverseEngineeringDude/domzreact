@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 import { ShoppingBag, X, Plus, Minus, ArrowRight, Settings, Trash2, Upload, Loader, Lock, LogOut } from 'lucide-react';
-/* ... imports ... */
-
-
-
-
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
-import { db, storage, auth } from './assets/firebase';
+import { db, auth } from './assets/firebase';
 import heroImage from './assets/hero-bottle.png';
+
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 // --- Utils ---
 function cn(...inputs) { return twMerge(clsx(inputs)); }
@@ -98,99 +97,242 @@ const MagneticButton = ({ children, className, onClick, ...props }) => (
 );
 
 // --- Pages & Components ---
-// ... (Navbar, Hero, Footer, StoreLayout components remain largely the same visually)
 
-// Re-using Navbar/Hero/Footer structure to ensure concise file
-// Re-using Navbar/Hero/Footer structure
+// 1. Floating Pill Navbar
 const Navbar = ({ cartCount, onOpenCart }) => {
-  const { scrollY } = useScroll();
-  const bgOpacity = useTransform(scrollY, [0, 100], [0, 0.8]);
-  const blur = useTransform(scrollY, [0, 100], ["0px", "12px"]);
+  const [visible, setVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const updateScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setVisible(false);
+      } else {
+        setVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+    window.addEventListener("scroll", updateScroll);
+    return () => window.removeEventListener("scroll", updateScroll);
+  }, [lastScrollY]);
 
   return (
     <motion.nav
-      style={{ backgroundColor: `rgba(249, 246, 240, ${bgOpacity})`, backdropFilter: `blur(${blur})` }}
-      className="fixed top-0 left-0 right-0 z-50 px-6 py-6 md:px-12 flex justify-between items-center transition-colors duration-500 border-b border-transparent hover:border-charcoal/5"
+      initial={{ y: -100 }}
+      animate={{ y: visible ? 20 : -100 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
     >
-      <Link to="/">
-        <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-2xl font-bold tracking-tighter text-charcoal">
-          Domz Naturelle
-        </motion.h1>
-      </Link>
-      <div className="flex gap-4 items-center">
-        {/* Admin Link Hidden */}
+      <div className="glass-heavy rounded-full px-8 py-4 flex items-center gap-10 pointer-events-auto">
+        <Link to="/" className="font-serif font-bold text-2xl tracking-tighter text-charcoal">
+          Domz<span className="text-sage">.</span>
+        </Link>
 
-        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} onClick={onOpenCart} className="relative p-3 rounded-full bg-white/40 border border-white/60 shadow-sm backdrop-blur-md">
-          <ShoppingBag className="w-5 h-5 text-charcoal" />
-          {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-sage text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">{cartCount}</span>}
-        </motion.button>
+        <div className="h-4 w-[1px] bg-charcoal/10" />
+
+        <div className="flex items-center gap-4">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onOpenCart}
+            className="group relative flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-sage transition-colors"
+          >
+            <span className="opacity-0 group-hover:opacity-100 absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-widest pointer-events-none transition-opacity">Bag</span>
+            <div className="relative">
+              <ShoppingBag className="w-5 h-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-sage text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold shadow-sm">
+                  {cartCount}
+                </span>
+              )}
+            </div>
+          </motion.button>
+        </div>
       </div>
     </motion.nav>
   );
 };
 
+// 2. Immersive Hero with GSAP
 const Hero = () => {
-  const { scrollY } = useScroll();
-  const yText = useTransform(scrollY, [0, 500], [0, 150]);
-  const yImage = useTransform(scrollY, [0, 500], [0, -150]);
-  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const containerRef = useRef(null);
+  const textRef = useRef(null);
+  const imageRef = useRef(null);
+
+  useGSAP(() => {
+    const tl = gsap.timeline();
+
+    // Reveal Text
+    tl.from(".hero-char", {
+      y: 100,
+      opacity: 0,
+      duration: 1.2,
+      stagger: 0.05,
+      ease: "power4.out"
+    })
+      .from(textRef.current.querySelectorAll("p, .badge"), {
+        y: 20,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: "power2.out"
+      }, "-=0.8")
+      .from(imageRef.current, {
+        scale: 0.8,
+        opacity: 0,
+        duration: 1.5,
+        ease: "expo.out"
+      }, "-=1.0");
+
+    // Parallax Effect on Scroll
+    gsap.to(imageRef.current, {
+      yPercent: 20,
+      ease: "none",
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: true
+      }
+    });
+
+    gsap.to(textRef.current, {
+      yPercent: -10,
+      ease: "none",
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: true
+      }
+    });
+
+  }, { scope: containerRef });
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 px-6">
-      {/* Background Ambience */}
-      <div className="absolute inset-0 pointer-events-none -z-10">
-        <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-gradient-to-r from-sage/20 to-stone-200/20 rounded-full blur-[120px]" />
-        <motion.div animate={{ scale: [1, 1.5, 1], rotate: [0, -45, 0] }} transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-gradient-to-l from-sage/10 to-charcoal/5 rounded-full blur-[100px]" />
+    <section ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden bg-organic">
+      {/* Abstract Background Shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[10%] -right-[10%] w-[60vw] h-[60vw] bg-sage/5 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-[10%] -left-[10%] w-[50vw] h-[50vw] bg-pink-100/20 rounded-full blur-[100px]" />
       </div>
 
-      <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
-        {/* Text Side - Glass Card */}
-        <motion.div style={{ y: yText, opacity }} className="relative">
-          <div className="absolute -inset-4 bg-white/30 backdrop-blur-xl rounded-[2rem] -z-10 border border-white/50 shadow-2xl skew-y-1 dark:bg-white/5 dark:border-white/10" />
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-8 md:p-12">
-            <span className="inline-block py-2 px-4 bg-charcoal text-white rounded-full text-xs uppercase tracking-[0.3em] mb-8 font-sans shadow-lg">Est. 2025</span>
-            <h2 className="text-6xl md:text-8xl font-bold text-charcoal mb-6 tracking-tight leading-[0.9] font-serif">
-              Domz <br />
-              <span className="italic font-light text-sage/90 relative">
-                Naturelle
-                <motion.svg initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, delay: 0.5 }} className="absolute -bottom-2 left-0 w-full h-3 text-sage" viewBox="0 0 100 10"><path d="M0 5 Q 50 10 100 5" fill="transparent" stroke="currentColor" strokeWidth="2" /></motion.svg>
-              </span>
-            </h2>
-            <p className="text-lg md:text-xl text-charcoal/70 max-w-lg leading-relaxed font-light mb-10 border-l-2 border-sage pl-6 dark:text-bone/70">
-              Experience skincare that feels lighter than air. Pure, organic essence lifted by nature.
-            </p>
-            <div className="flex gap-4">
-              <button onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })} className="px-8 py-4 bg-charcoal text-white font-medium rounded-full hover:bg-sage transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 flex items-center gap-2">
-                Explore Collection <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
+      <div className="container mx-auto px-6 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        {/* Typography */}
+        <div ref={textRef} className="lg:col-span-7 flex flex-col justify-center text-center lg:text-left pt-20 lg:pt-0">
+          <div className="mb-6 flex justify-center lg:justify-start">
+            <span className="badge px-4 py-1.5 rounded-full border border-charcoal/10 text-[10px] uppercase tracking-[0.25em] text-charcoal/60 bg-white/40 backdrop-blur-md shadow-sm">Organic Collection 2026</span>
+          </div>
 
-        {/* Image Side - Floating Composition */}
-        <motion.div style={{ y: yImage, opacity }} className="relative hidden md:block">
-          <motion.div animate={{ y: [0, -30, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} className="relative z-20">
-            <div className="relative aspect-square rounded-full border border-white/40 bg-white/10 backdrop-blur-md p-8 shadow-2xl ring-1 ring-white/60">
-              <div className="w-full h-full rounded-full bg-gradient-to-tr from-stone-100 to-white flex items-center justify-center overflow-hidden relative">
-                <img src={heroImage} alt="Luxury Skin Essence" className="w-[120%] h-[120%] object-cover mix-blend-multiply opacity-90 scale-110" />
-              </div>
+          <h1 className="text-[13vw] lg:text-[8vw] leading-[0.85] font-serif font-medium text-charcoal mb-8 tracking-tighter overflow-hidden">
+            <div className="flex justify-center lg:justify-start">
+              {"Domz".split("").map((char, i) => <span key={i} className="hero-char inline-block">{char}</span>)}
             </div>
-          </motion.div>
+            <div className="flex justify-center lg:justify-start text-sage italic pr-4">
+              {"Naturelle".split("").map((char, i) => <span key={i} className="hero-char inline-block">{char}</span>)}
+            </div>
+          </h1>
 
-          {/* Floating Orbiting Elements */}
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] border border-sage/20 rounded-full -z-10 dotted-border" />
-          <motion.div animate={{ rotate: -360 }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] border border-charcoal/5 rounded-full -z-10" />
-        </motion.div>
+          <p className="text-lg md:text-xl text-charcoal/60 max-w-lg mx-auto lg:mx-0 font-light leading-relaxed mb-10">
+            Discover the essence of purity. Curated skincare derived from the rarest botanicals, designed to make you feel weightless.
+          </p>
+        </div>
+
+        {/* Visual Composition */}
+        <div className="lg:col-span-5 relative h-[50vh] lg:h-[80vh] flex items-center justify-center">
+          <div ref={imageRef} className="relative w-full max-w-md aspect-[3/4]">
+            {/* Image Container */}
+            <div className="absolute inset-4 rounded-t-[10rem] rounded-b-[4rem] overflow-hidden bg-white shadow-2xl z-10 border border-white/20">
+              <img src={heroImage} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/20 to-transparent mix-blend-multiply" />
+            </div>
+
+            {/* Decorative Elements */}
+            <div className="absolute -inset-2 border border-sage/30 rounded-t-[10rem] rounded-b-[4rem] z-0" />
+          </div>
+        </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }} className="absolute bottom-10 left-1/2 -translate-x-1/2 text-charcoal/30 flex flex-col items-center gap-2 dark:text-bone/20">
-        <span className="text-[10px] uppercase tracking-widest">Scroll</span>
-        <div className="w-[1px] h-12 bg-gradient-to-b from-charcoal/30 to-transparent" />
-      </motion.div>
+      {/* Scroll Hint */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 opacity-50 animate-bounce-slow">
+        <span className="text-[9px] uppercase tracking-[0.3em] text-charcoal">Scroll</span>
+        <div className="w-[1px] h-12 bg-charcoal/20" />
+      </div>
     </section>
   )
 }
+
+// 3. GSAP Enhanced Product Card
+const ProductCard = ({ product, index, onAdd }) => {
+  const cardRef = useRef(null);
+
+  useGSAP(() => {
+    // Scroll Reveal
+    gsap.from(cardRef.current, {
+      y: 100,
+      opacity: 0,
+      duration: 1,
+      ease: "power3.out",
+      scrollTrigger: {
+        trigger: cardRef.current,
+        start: "top 90%", // Trigger when top of card hits 90% of viewport height
+        toggleActions: "play none none reverse"
+      }
+    });
+  }, { scope: cardRef });
+
+  // Hover animations using GSAP context safely inside event handlers
+  const onEnter = () => {
+    gsap.to(cardRef.current.querySelector(".p-img"), { scale: 1.08, duration: 0.6, ease: "power2.out" });
+    gsap.to(cardRef.current.querySelector(".p-btn"), { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.7)" });
+  };
+
+  const onLeave = () => {
+    gsap.to(cardRef.current.querySelector(".p-img"), { scale: 1, duration: 0.6, ease: "power2.out" });
+    gsap.to(cardRef.current.querySelector(".p-btn"), { y: 20, opacity: 0, duration: 0.3, ease: "power2.in" });
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      className={`group relative flex flex-col items-center ${index % 2 !== 0 ? "md:translate-y-12" : ""}`} // Staggered layout helper
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
+      {/* Image Area */}
+      <div className="relative w-full aspect-[4/5] rounded-[2.5rem] overflow-hidden bg-white shadow-xl mb-6 cursor-pointer border border-white/40">
+        {product.image ? (
+          <img
+            src={product.image}
+            className="p-img w-full h-full object-cover mix-blend-multiply"
+            style={{ transform: "scale(1)" }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-charcoal/20 bg-stone-100">No Image</div>
+        )}
+
+        {/* Glossy Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent pointer-events-none opacity-60" />
+
+        {/* Quick Add Overlay */}
+        <div
+          onClick={(e) => { e.stopPropagation(); onAdd(product); }}
+          className="p-btn absolute bottom-4 right-4 w-12 h-12 bg-charcoal text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-sage transition-colors opacity-0 translate-y-4"
+        >
+          <Plus className="w-5 h-5" />
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="text-center">
+        <h3 className="text-2xl font-serif text-charcoal mb-1">{product.name}</h3>
+        <p className="text-[10px] text-charcoal/40 uppercase tracking-[0.2em] mb-3 font-medium">Beauty Essence</p>
+        <span className="text-lg font-medium text-sage">₹{product.price}</span>
+      </div>
+    </div>
+  );
+};
 
 
 const Footer = () => (
@@ -555,182 +697,117 @@ const ProtectedRoute = ({ children }) => {
 // --- Checkout Modal ---
 const CheckoutModal = ({ isOpen, onClose, onConfirm, initialData, coupons }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    city: "",
-    zip: "",
-    ...initialData
+    name: initialData.name || "",
+    phone: initialData.phone || "",
+    address: initialData.address || "",
+    city: initialData.city || "",
+    zip: initialData.zip || ""
   });
 
+  // Coupon inputs
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData(prev => ({ ...prev, ...initialData }));
-    }
-    // Reset coupon state when modal opens/closes
-    if (isOpen) {
-      setCouponCode("");
-      setAppliedCoupon(null);
-      setCouponError("");
-    }
-  }, [initialData, isOpen]);
-
-  if (!isOpen) return null;
-
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleApplyCoupon = () => {
     setCouponError("");
-    setAppliedCoupon(null);
-    if (!couponCode.trim()) return;
+    const code = couponCode.trim();
+    if (!code) return;
 
-    const coupon = coupons.find(c => c.code === couponCode.trim());
-    if (coupon) {
-      setAppliedCoupon(coupon);
+    // Find coupon in coupons list (case sensitive or not? usually case sensitive or uppercase)
+    const found = coupons.find(c => c.code === code);
+    if (found) {
+      setAppliedCoupon(found);
     } else {
       setCouponError("Invalid Coupon Code");
+      setAppliedCoupon(null);
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.phone || !formData.address) {
-      alert("Please fill in all required fields.");
+      alert("Please fill in required fields.");
       return;
     }
     onConfirm(formData, appliedCoupon);
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-charcoal/30 backdrop-blur-sm z-[70] flex items-center justify-center p-4"
+    >
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-charcoal/60 backdrop-blur-sm"
-      />
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="relative bg-bone w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-white/50 max-h-[90vh] overflow-y-auto"
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        className="bg-white/90 backdrop-blur-xl w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-white/50"
       >
-        <div className="bg-white/40 backdrop-blur-xl p-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-serif font-bold text-charcoal">Shipping & Offers</h2>
-            <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-full transition-colors">
-              <X className="w-5 h-5" />
-            </button>
+        <div className="p-6 border-b border-charcoal/5 flex justify-between items-center bg-stone-50/50">
+          <h3 className="text-xl font-serif font-bold text-charcoal">Shipping & Offers</h3>
+          <button onClick={onClose} className="p-2 hover:bg-stone-200/50 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          {/* Form Fields */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-bold text-charcoal/40 uppercase tracking-widest">Your Details</h4>
+            <input name="name" placeholder="Full Name *" value={formData.name} onChange={handleChange} className="w-full p-4 bg-white border border-stone-200 rounded-xl focus:border-sage outline-none transition-colors" />
+            <input name="phone" placeholder="Phone Number *" value={formData.phone} onChange={handleChange} className="w-full p-4 bg-white border border-stone-200 rounded-xl focus:border-sage outline-none transition-colors" />
+            <input name="address" placeholder="Address *" value={formData.address} onChange={handleChange} className="w-full p-4 bg-white border border-stone-200 rounded-xl focus:border-sage outline-none transition-colors" />
+            <div className="grid grid-cols-2 gap-4">
+              <input name="city" placeholder="City" value={formData.city} onChange={handleChange} className="w-full p-4 bg-white border border-stone-200 rounded-xl focus:border-sage outline-none transition-colors" />
+              <input name="zip" placeholder="ZIP Code" value={formData.zip} onChange={handleChange} className="w-full p-4 bg-white border border-stone-200 rounded-xl focus:border-sage outline-none transition-colors" />
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">Full Name *</label>
+          <div className="h-[1px] bg-charcoal/5 w-full" />
+
+          {/* Coupon Section */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-bold text-charcoal/40 uppercase tracking-widest">Have a Coupon?</h4>
+            <div className="flex gap-2">
               <input
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Jane Doe"
-                className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all placeholder:text-charcoal/20"
-                required
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="Enter Code"
+                className="flex-1 p-4 bg-white border border-stone-200 rounded-xl focus:border-sage outline-none uppercase tracking-wider placeholder:normal-case"
               />
+              <button onClick={handleApplyCoupon} type="button" className="px-6 bg-charcoal text-white rounded-xl hover:bg-sage transition-colors font-medium text-sm">Apply</button>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">Phone Number *</label>
-              <input
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="+91 98765 43210"
-                className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all placeholder:text-charcoal/20"
-                required
-              />
-            </div>
+            {couponError && <p className="text-red-500 text-sm pl-1">{couponError}</p>}
 
-            <div>
-              <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">Address *</label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                placeholder="Street, Building, Floor..."
-                rows={2}
-                className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all placeholder:text-charcoal/20"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">City</label>
-                <input
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">ZIP / Postal</label>
-                <input
-                  name="zip"
-                  value={formData.zip}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Coupon Section */}
-            <div className="pt-2 border-t border-charcoal/10">
-              <label className="text-xs font-bold text-charcoal/50 uppercase tracking-widest block mb-1">Coupon Code</label>
-              <div className="flex gap-2">
-                <input
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  placeholder="Enter Code"
-                  className="flex-1 p-3 bg-white/60 border border-charcoal/10 rounded-xl outline-none focus:border-sage transition-all placeholder:text-charcoal/20"
-                />
-                <button
-                  type="button"
-                  onClick={handleApplyCoupon}
-                  className="px-4 py-2 bg-charcoal text-white rounded-xl text-sm font-bold hover:bg-sage transition-colors"
-                >
-                  Apply
-                </button>
-              </div>
-              {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
-              {appliedCoupon && (
-                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex justify-between">
-                  <span>Coupon Applied: {appliedCoupon.code}</span>
-                  <span className="font-bold">-₹{appliedCoupon.discountAmount}</span>
+            {appliedCoupon && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-sage/10 rounded-xl border border-sage/20 flex justify-between items-center text-sage-dark">
+                <div>
+                  <span className="font-bold block text-charcoal">Coupon Applied!</span>
+                  <span className="text-xs">Saving ₹{appliedCoupon.discountAmount}</span>
                 </div>
-              )}
-            </div>
+                <CheckCircle className="w-5 h-5 text-sage" /> {/* Assuming CheckCircle is available or use standard check */}
+              </motion.div>
+            )}
+          </div>
+        </div>
 
-            <div className="pt-4">
-              <button
-                type="submit"
-                className="w-full py-4 bg-charcoal text-white font-bold rounded-xl hover:bg-sage transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-              >
-                Confirm & Order via WhatsApp <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
+        <div className="p-6 border-t border-charcoal/5 bg-stone-50/50 flex justify-end gap-4">
+          {!appliedCoupon && <span className="text-xs text-charcoal/40 self-center">No coupon applied</span>}
+          <button onClick={handleSubmit} className="px-8 py-3 bg-charcoal text-white font-bold rounded-xl hover:bg-sage transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">
+            Confirm & Order
+          </button>
         </div>
       </motion.div>
-    </div>
-  );
-};
 
+    </motion.div>
+  )
+}
 
 const StorePage = () => {
   const [cart, setCart] = useState(() => {
@@ -845,7 +922,6 @@ const StorePage = () => {
         )}
       </AnimatePresence>
 
-
       <main>
         <Hero />
         <section className="px-6 py-32 md:px-12 max-w-7xl mx-auto relative">
@@ -902,54 +978,6 @@ const StorePage = () => {
   )
 }
 
-const ProductCard = ({ product, index, onAdd }) => {
-  const isEven = index % 2 === 0;
-  return (
-    <motion.div
-      variants={{ hidden: { opacity: 0, y: 100, filter: "blur(10px)" }, visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.8, delay: index * 0.1 } } }}
-      whileHover={{ y: -20, scale: 1.02 }}
-      className={cn("group relative flex flex-col h-full", isEven ? "md:mt-0" : "md:mt-24")}
-    >
-      {/* Glass Container */}
-      <div className="relative aspect-[3/4] mb-6 rounded-[2rem] overflow-hidden bg-white/20 border border-white/40 shadow-xl transition-all duration-700 group-hover:shadow-2xl group-hover:border-white/60 group-hover:bg-white/30 backdrop-blur-sm">
-
-        {/* Glossy Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-black/5 z-10 pointer-events-none opacity-50 group-hover:opacity-70 transition-opacity" />
-
-        {/* Product Image */}
-        {product.image ? (
-          <img src={product.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 mix-blend-multiply opacity-90 group-hover:opacity-100" />
-        ) : (
-          <div className="w-full h-full bg-stone-200 flex items-center justify-center text-stone-400">No Image</div>
-        )}
-
-        {/* Floating Add Button */}
-        <motion.button
-          whileHover={{ scale: 1.2, rotate: 90 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={(e) => { e.stopPropagation(); onAdd(product); }}
-          className="absolute bottom-6 right-6 w-14 h-14 bg-white/70 backdrop-blur-md border border-white text-charcoal rounded-full flex items-center justify-center shadow-lg z-20 group-hover:bg-sage group-hover:text-white transition-colors duration-300"
-        >
-          <Plus className="w-6 h-6" />
-        </motion.button>
-      </div>
-
-      {/* Text Content */}
-      <div className="px-4 py-2 relative">
-        <motion.div initial={{ x: -10, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="absolute -left-2 top-0 bottom-0 w-1 bg-sage/30 rounded-full scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-500" />
-
-        <h3 className="text-3xl font-serif font-medium text-charcoal mb-2 tracking-tight group-hover:text-sage transition-colors">{product.name}</h3>
-        <p className="text-sm text-charcoal/60 mb-4 font-sans font-light leading-relaxed line-clamp-2">{product.description}</p>
-
-        <div className="flex items-center justify-between">
-          <span className="text-xl font-bold text-charcoal">₹{product.price}</span>
-          <button onClick={() => onAdd(product)} className="text-xs uppercase tracking-widest text-charcoal/40 hover:text-sage border-b border-transparent hover:border-sage transition-all">Add to Bag</button>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
 
 export default function App() {
   return (
@@ -962,7 +990,6 @@ export default function App() {
             <AdminDashboard />
           </ProtectedRoute>
         } />
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

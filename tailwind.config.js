@@ -7,9 +7,17 @@ export default {
     theme: {
         extend: {
             colors: {
-                sage: '#8A9A5B',
+                sage: '#7C904E', // Slightly deeper/muted sage
+                'sage-light': '#B2C290',
                 bone: '#F9F6F0',
-                charcoal: '#36454F',
+                charcoal: '#2C3A2E', // Deep Green-Black for high contrast
+                sand: '#E8E4D9',
+                stone: {
+                    50: '#F5F5F4',
+                    100: '#E7E5E4',
+                    200: '#D6D3D1',
+                    300: '#A8A29E', // Standard Tailwind Stone
+                }
             },
             fontFamily: {
                 serif: ['"Playfair Display"', 'serif'],

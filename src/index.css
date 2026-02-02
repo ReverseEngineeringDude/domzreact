@@ -19,11 +19,35 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .bg-organic {
+    background: radial-gradient(circle at 50% 50%, rgba(178, 194, 144, 0.15) 0%, rgba(249, 246, 240, 1) 50%, rgba(232, 228, 217, 0.3) 100%);
+    background-size: 200% 200%;
+    animation: organicFlow 20s ease-in-out infinite alternate;
+  }
+
+  .glass-heavy {
+    @apply bg-white/60 backdrop-blur-xl border border-white/50 shadow-lg;
+  }
 }
 
-/* Custom scrollbar for 'Antigravity' feel - maybe thin or hidden? */
+@keyframes organicFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -31,6 +55,11 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #8A9A5B;
+  background: rgba(124, 144, 78, 0.5);
+  /* Sage with opacity */
   border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 144, 78, 0.8);
 }
