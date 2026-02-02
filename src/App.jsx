@@ -1,23 +1,8 @@
+
 import { HashRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
-
-// ... (existing imports)
-
-export default function App() {
-  return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<StorePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <AdminDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </HashRouter>
-  );
-}
+import { motion, AnimatePresence } from 'framer-motion';
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { ShoppingBag, X, Plus, Minus, ArrowRight, Settings, Trash2, Upload, Loader, Lock, LogOut } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -996,7 +981,7 @@ const StorePage = () => {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<StorePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -1005,7 +990,8 @@ export default function App() {
             <AdminDashboard />
           </ProtectedRoute>
         } />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
