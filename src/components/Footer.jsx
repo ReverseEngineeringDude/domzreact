@@ -9,7 +9,9 @@ const Footer = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                     {/* Brand Column */}
                     <div className="text-center md:text-left space-y-4">
-                        <h2 className="font-serif text-3xl font-bold tracking-tighter">Domz<span className="text-sage">.</span></h2>
+                        <div className="mb-4">
+                            <img src="/domz_logo_no_bg.png" alt="Domz Naturelle" className="h-12 w-auto mx-auto md:mx-0 invert brightness-0" />
+                        </div>
                         <p className="text-white/40 text-sm leading-relaxed max-w-xs mx-auto md:mx-0">
                             Curating nature's finest essences for your daily ritual. Pure, organic, and timeless skincare designed to elevate your being.
                         </p>

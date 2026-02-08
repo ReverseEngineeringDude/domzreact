@@ -14,9 +14,10 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 import { useShop } from '../context/ShopContext';
 import SEO from '../components/SEO';
+import ProductEdit from '../components/ProductEdit';
 
 const Home = () => {
-    const { products } = useShop();
+    const { products, appLoaded } = useShop();
     const containerRef = useRef(null);
     const textRef = useRef(null);
     const imageRef = useRef(null);
@@ -25,7 +26,10 @@ const Home = () => {
 
 
     useGSAP(() => {
+        if (!appLoaded) return;
         const tl = gsap.timeline();
+
+
 
         // 1. Hero Reveal
         tl.from(".hero-char", {
@@ -115,7 +119,7 @@ const Home = () => {
 
 
 
-    }, { scope: containerRef, dependencies: [products] });
+    }, { scope: containerRef, dependencies: [products, appLoaded] });
 
     return (
         <main ref={containerRef} className="overflow-hidden">

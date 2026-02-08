@@ -17,6 +17,7 @@ export const ShopProvider = ({ children }) => {
         } catch { return []; }
     });
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [appLoaded, setAppLoaded] = useState(false);
 
     // Fetch Products
     useEffect(() => {
@@ -69,9 +70,10 @@ export const ShopProvider = ({ children }) => {
         updateQty,
         removeFromCart,
         clearCart,
-        isCartOpen,
         setIsCartOpen,
-        subtotal
+        subtotal,
+        appLoaded,
+        setAppLoaded
     };
 
     return (

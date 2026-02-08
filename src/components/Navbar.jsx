@@ -50,8 +50,8 @@ const Navbar = () => {
                         <Menu className="w-6 h-6" />
                     </button>
 
-                    <Link to="/" className="font-serif font-bold text-xl md:text-2xl tracking-tighter text-charcoal">
-                        Domz<span className="text-sage">.</span>
+                    <Link to="/" className="flex items-center">
+                        <img src="/domz_logo_no_bg.png" alt="Domz Naturelle" className="h-8 md:h-10 w-auto object-contain" />
                     </Link>
 
                     <div className="hidden md:flex gap-6 text-sm font-medium text-charcoal/60">

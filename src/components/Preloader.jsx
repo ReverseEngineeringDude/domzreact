@@ -3,11 +3,16 @@ import React, { useRef } from 'react';
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 
+import { useShop } from '../context/ShopContext';
+
 const Preloader = () => {
     const containerRef = useRef(null);
+    const { setAppLoaded } = useShop();
 
     useGSAP(() => {
-        const tl = gsap.timeline();
+        const tl = gsap.timeline({
+            onComplete: () => setAppLoaded(true)
+        });
 
         tl.to(".loader-text", {
             opacity: 1,
