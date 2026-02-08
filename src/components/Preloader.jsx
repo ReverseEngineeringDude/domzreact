@@ -31,7 +31,10 @@ const Preloader = () => {
             .to(containerRef.current, {
                 yPercent: -100,
                 duration: 1,
-                ease: "power4.inOut"
+                ease: "power4.inOut",
+                onComplete: () => {
+                    if (containerRef.current) containerRef.current.style.display = 'none';
+                }
             });
 
     }, { scope: containerRef });

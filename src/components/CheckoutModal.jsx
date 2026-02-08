@@ -50,7 +50,7 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, initialData, coupons }) => 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-charcoal/30 backdrop-blur-sm z-[70] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-charcoal/30 backdrop-blur-sm z-[300] flex items-center justify-center p-4"
         >
             <motion.div
                 initial={{ scale: 0.9, y: 20 }}

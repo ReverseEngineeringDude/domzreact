@@ -35,6 +35,7 @@ export const ShopProvider = ({ children }) => {
     }, [cart]);
 
     const addToCart = (product) => {
+        console.log("Adding to cart:", product);
         setCart(prev => {
             const existing = prev.find(item => item.id === product.id);
             if (existing) {
@@ -71,6 +72,7 @@ export const ShopProvider = ({ children }) => {
         removeFromCart,
         clearCart,
         setIsCartOpen,
+        isCartOpen,
         subtotal,
         appLoaded,
         setAppLoaded

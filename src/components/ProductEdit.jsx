@@ -4,10 +4,13 @@ import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link } from 'react-router-dom';
+import { Plus } from 'lucide-react';
+import { useShop } from '../context/ShopContext';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const ProductEdit = ({ products }) => {
+    const { addToCart } = useShop();
     const containerRef = useRef(null);
 
     useGSAP(() => {
@@ -58,8 +61,8 @@ const ProductEdit = ({ products }) => {
 
                         return (
                             <div key={product.id} className={`${colSpan} group relative`}>
-                                <div className={`overflow-hidden w-full ${aspectRatio} bg-stone-100 mb-6 relative`}>
-                                    <div className="parallax-img w-full h-[120%] -y-[10%]">
+                                <div className={`overflow-hidden w-full ${aspectRatio} bg-stone-100 mb-6 relative group transform transition-transform`}>
+                                    <div className="parallax-img w-full h-[120%] -y-[10%] pointer-events-none">
                                         <img
                                             src={product.image}
                                             alt={product.name}
@@ -67,6 +70,14 @@ const ProductEdit = ({ products }) => {
                                         />
                                     </div>
                                     <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/5 transition-colors duration-500" />
+
+                                    {/* Add to Cart Button */}
+                                    <button
+                                        onClick={() => addToCart(product)}
+                                        className="absolute bottom-6 right-6 w-12 h-12 bg-white text-charcoal rounded-full flex items-center justify-center opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-sage hover:text-white shadow-lg z-20 cursor-pointer"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                    </button>
                                 </div>
 
                                 <div className="flex justify-between items-baseline pr-4">
