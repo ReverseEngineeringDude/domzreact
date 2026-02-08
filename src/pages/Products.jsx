@@ -5,11 +5,14 @@ import ProductCard from '../components/ProductCard';
 import { Loader } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+import SEO from '../components/SEO';
+
 const Products = () => {
     const { products, loading, addToCart } = useShop();
 
     return (
         <section className="min-h-screen pt-32 pb-24 px-6 relative">
+            <SEO title="Our Collection" description="Explore our curated collection of organic skincare products. Limited edition, pure, and potent." url="/products" />
             {/* Ambient Background Elements */}
             <div className="absolute top-40 left-0 w-96 h-96 bg-sage/5 rounded-full blur-[100px] -z-10 mix-blend-multiply animate-pulse" />
             <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-stone-300/10 rounded-full blur-[120px] -z-10" />

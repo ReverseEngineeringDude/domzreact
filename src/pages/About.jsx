@@ -2,9 +2,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
+import SEO from '../components/SEO';
+
 const About = () => {
     return (
         <div className="min-h-screen pt-32 pb-24 px-6 flex items-center justify-center relative overflow-hidden">
+            <SEO title="The Philosophy" description="Learn about the philosophy behind Domz Naturelle. Nature is not an ingredient, it is the formula." url="/about" />
             {/* Background */}
             <div className="absolute inset-0 -z-10">
                 <div className="absolute top-[20%] right-[10%] w-[40vw] h-[40vw] bg-sage/10 rounded-full blur-[120px]" />

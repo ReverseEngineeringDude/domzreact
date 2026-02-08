@@ -77,25 +77,29 @@ const Layout = ({ children }) => {
   );
 };
 
+import { HelmetProvider } from 'react-helmet-async';
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <ShopProvider>
-        <HashRouter>
-          <Routes>
-            {/* Public Routes with Layout */}
-            <Route path="/" element={<Layout><Home /></Layout>} />
-            <Route path="/products" element={<Layout><Products /></Layout>} />
-            <Route path="/about" element={<Layout><About /></Layout>} />
+      <HelmetProvider>
+        <ShopProvider>
+          <HashRouter>
+            <Routes>
+              {/* Public Routes with Layout */}
+              <Route path="/" element={<Layout><Home /></Layout>} />
+              <Route path="/products" element={<Layout><Products /></Layout>} />
+              <Route path="/about" element={<Layout><About /></Layout>} />
 
-            {/* Auth Routes - No Layout/Navbar/Footer if desired, or wrapped if you want them */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={<Admin />} />
+              {/* Auth Routes - No Layout/Navbar/Footer if desired, or wrapped if you want them */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/admin" element={<Admin />} />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </HashRouter>
-      </ShopProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </HashRouter>
+        </ShopProvider>
+      </HelmetProvider>
     </ErrorBoundary>
   );
 }

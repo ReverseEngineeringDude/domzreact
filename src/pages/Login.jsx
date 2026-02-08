@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { auth } from '../assets/firebase';
+import SEO from '../components/SEO';
 
 const Login = () => {
     const [email, setEmail] = useState("");
@@ -40,6 +41,7 @@ const Login = () => {
 
     return (
         <div className="min-h-screen bg-bone flex items-center justify-center font-sans relative overflow-hidden">
+            <SEO title="Login" noIndex={true} />
             <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 10, repeat: Infinity }} className="absolute -top-20 -left-20 w-[600px] h-[600px] bg-sage/20 rounded-full blur-[100px]" />
 
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative z-10 w-full max-w-md p-8 bg-white/40 backdrop-blur-2xl rounded-3xl border border-white/60 shadow-2xl">

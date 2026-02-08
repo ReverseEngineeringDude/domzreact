@@ -13,10 +13,7 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 
 import { useShop } from '../context/ShopContext';
-import ProductEdit from '../components/ProductEdit';
-
-
-
+import SEO from '../components/SEO';
 
 const Home = () => {
     const { products } = useShop();
@@ -122,6 +119,11 @@ const Home = () => {
 
     return (
         <main ref={containerRef} className="overflow-hidden">
+            <SEO
+                title="Premium Organic Skincare"
+                description="Discover the essence of purity with Domz Naturelle. Curated skincare derived from the rarest botanicals."
+                keywords="organic skincare, natural beauty, premium, botanicals, Domz Naturelle"
+            />
             {/* Grain Overlay */}
             <div className="grain-overlay" />
 

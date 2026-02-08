@@ -8,6 +8,7 @@ import { LogOut, Loader, Upload, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { motion } from 'framer-motion';
+import SEO from '../components/SEO';
 
 function cn(...inputs) { return twMerge(clsx(inputs)); }
 
@@ -189,6 +190,7 @@ const Admin = () => {
 
     return (
         <div className="min-h-screen bg-stone-100 font-sans flex relative">
+            <SEO title="Admin Dashboard" noIndex={true} />
             {/* Sidebar */}
             <aside className="w-64 bg-charcoal text-white p-6 flex flex-col hidden md:flex sticky top-0 h-screen">
                 <h2 className="text-2xl font-serif font-bold mb-10">Domz Admin</h2>
