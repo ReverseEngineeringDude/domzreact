@@ -20,8 +20,10 @@ const Admin = () => {
     // Data State
     const [products, setProducts] = useState([]);
     const [coupons, setCoupons] = useState([]);
+    const [offers, setOffers] = useState([]);
     const [productsLoading, setProductsLoading] = useState(true);
     const [couponsLoading, setCouponsLoading] = useState(true);
+    const [offersLoading, setOffersLoading] = useState(true);
 
     const [activeTab, setActiveTab] = useState("products");
 
@@ -39,6 +41,10 @@ const Admin = () => {
     const [adminName, setAdminName] = useState("");
     const [adminNumber, setAdminNumber] = useState("8590985286");
     const [discountAmount, setDiscountAmount] = useState("");
+
+    // Offer Form State
+    const [minQuantity, setMinQuantity] = useState("");
+    const [offerDiscount, setOfferDiscount] = useState("");
 
     const addLog = (msg) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
 
@@ -70,6 +76,17 @@ const Admin = () => {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             setCouponsLoading(false);
+        });
+        return unsubscribe;
+    }, [user]);
+
+    // Fetch Offers
+    useEffect(() => {
+        if (!user) return;
+        const q = query(collection(db, "offers"), orderBy("minQuantity", "asc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setOffers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setOffersLoading(false);
         });
         return unsubscribe;
     }, [user]);
@@ -165,6 +182,22 @@ const Admin = () => {
         }
     };
 
+    const handleAddOffer = async (e) => {
+        e.preventDefault();
+        try {
+            await addDoc(collection(db, "offers"), {
+                minQuantity: parseInt(minQuantity),
+                discountAmount: parseFloat(offerDiscount),
+                createdAt: serverTimestamp(),
+                createdBy: user.uid
+            });
+            setMinQuantity(""); setOfferDiscount("");
+            alert("Offer Rule Created!");
+        } catch (err) {
+            alert("Error creating offer: " + err.message);
+        }
+    };
+
     const handleDeleteProduct = async (id) => {
         if (confirm("Delete this essence?")) {
             try {
@@ -185,6 +218,16 @@ const Admin = () => {
         }
     };
 
+    const handleDeleteOffer = async (id) => {
+        if (confirm("Delete this offer rule?")) {
+            try {
+                await deleteDoc(doc(db, "offers", id));
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+    };
+
     if (loading) return <div className="min-h-screen bg-bone flex items-center justify-center"><Loader className="animate-spin text-sage w-10 h-10" /></div>;
     if (!user) return <div className="text-center p-10">Redirecting...</div>;
 
@@ -198,6 +241,7 @@ const Admin = () => {
                 <nav className="flex-1 space-y-2">
                     <div onClick={() => setActiveTab("products")} className={cn("p-3 rounded-lg cursor-pointer transition-colors", activeTab === "products" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Products</div>
                     <div onClick={() => setActiveTab("coupons")} className={cn("p-3 rounded-lg cursor-pointer transition-colors", activeTab === "coupons" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Coupons</div>
+                    <div onClick={() => setActiveTab("offers")} className={cn("p-3 rounded-lg cursor-pointer transition-colors", activeTab === "offers" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Bulk Offers</div>
                 </nav>
                 <button onClick={logout} className="flex items-center gap-2 text-white/50 hover:text-white mt-auto">
                     <LogOut className="w-4 h-4" /> Logout
@@ -215,6 +259,7 @@ const Admin = () => {
                 <div className="flex gap-4 mb-6 md:hidden">
                     <button onClick={() => setActiveTab("products")} className={cn("px-4 py-2 rounded-full font-bold text-sm", activeTab === "products" ? "bg-charcoal text-white" : "bg-white text-charcoal")}>Products</button>
                     <button onClick={() => setActiveTab("coupons")} className={cn("px-4 py-2 rounded-full font-bold text-sm", activeTab === "coupons" ? "bg-charcoal text-white" : "bg-white text-charcoal")}>Coupons</button>
+                    <button onClick={() => setActiveTab("offers")} className={cn("px-4 py-2 rounded-full font-bold text-sm", activeTab === "offers" ? "bg-charcoal text-white" : "bg-white text-charcoal")}>Offers</button>
                 </div>
 
                 {activeTab === "products" && (
@@ -290,6 +335,47 @@ const Admin = () => {
                     </div>
                 )}
 
+                {activeTab === "offers" && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Add Offer Form */}
+                        <div className="lg:col-span-1">
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 sticky top-8">
+                                <h3 className="text-lg font-bold text-charcoal mb-4">Add Bulk Offer</h3>
+                                <form onSubmit={handleAddOffer} className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Minimum Quantity</label>
+                                        <input type="number" value={minQuantity} onChange={e => setMinQuantity(e.target.value)} placeholder="e.g. 3" required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Discount Amount (₹)</label>
+                                        <input type="number" value={offerDiscount} onChange={e => setOfferDiscount(e.target.value)} placeholder="e.g. 500" required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                                    </div>
+                                    <button type="submit" className="w-full py-3 bg-charcoal text-white font-bold rounded-lg hover:bg-sage transition-colors">Create Offer Rule</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        {/* Offer List */}
+                        <div className="lg:col-span-2">
+                            <h3 className="text-lg font-bold text-charcoal mb-4">Quantity Discount Rules ({offers.length})</h3>
+                            {offersLoading ? <div className="text-center py-10"><Loader className="animate-spin inline-block text-charcoal/30" /></div> : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {offers.map(o => (
+                                        <div key={o.id} className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex items-center justify-between">
+                                            <div>
+                                                <h4 className="font-bold text-charcoal">Buy {o.minQuantity}+ Items</h4>
+                                                <p className="text-sage font-bold">Discount: ₹{o.discountAmount}</p>
+                                            </div>
+                                            <button onClick={() => handleDeleteOffer(o.id)} className="p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
                 {activeTab === "coupons" && (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Add Coupon Form */}

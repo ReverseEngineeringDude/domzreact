@@ -5,12 +5,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, Plus, Minus, ArrowRight } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import CheckoutModal from './CheckoutModal';
+import { Tag } from 'lucide-react';
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from '../assets/firebase';
 
 const CartDrawer = () => {
     // 1. Ensure these are coming from useShop()
-    const { cart, updateQty, removeFromCart, subtotal, isCartOpen, setIsCartOpen, clearCart } = useShop();
+    const { 
+        cart, 
+        updateQty, 
+        removeFromCart, 
+        subtotal, 
+        bulkDiscount, 
+        finalTotal, 
+        applicableOffer,
+        isCartOpen, 
+        setIsCartOpen, 
+        clearCart 
+    } = useShop();
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [coupons, setCoupons] = useState([]);
 
@@ -35,13 +47,15 @@ const CartDrawer = () => {
     }, []);
 
     const handleCheckout = (details, coupon) => {
-        let finalTotal = subtotal;
-        if (coupon) finalTotal -= coupon.discountAmount;
+        let orderTotal = finalTotal;
+        if (coupon) orderTotal -= coupon.discountAmount;
 
         // Construct WhatsApp Message
         const itemsList = cart.map(i => `- ${i.name} (x${i.qty}): ₹${i.price * i.qty}`).join('%0A');
+        const bulkDiscountText = bulkDiscount > 0 ? `%0A----------%0ABulk Offer Applied: Buy ${applicableOffer?.minQuantity}+ (-₹${bulkDiscount})` : "";
         const couponText = coupon ? `%0A----------%0ACoupon Applied: ${coupon.code} (-₹${coupon.discountAmount})` : "";
-        const message = `*New Order from ${details.name}*%0A%0A*Items:*%0A${itemsList}%0A%0A*Subtotal:* ₹${subtotal}${couponText}%0A*Total:* ₹${Math.max(0, finalTotal)}%0A%0A*Shipping Details:*%0A${details.address}, ${details.city} - ${details.zip}%0APhone: ${details.phone}`;
+        
+        const message = `*New Order from ${details.name}*%0A%0A*Items:*%0A${itemsList}%0A%0A*Subtotal:* ₹${subtotal}${bulkDiscountText}${couponText}%0A*Total:* ₹${Math.max(0, orderTotal)}%0A%0A*Shipping Details:*%0A${details.address}, ${details.city} - ${details.zip}%0APhone: ${details.phone}`;
 
         // Redirect to Admin Logic
         let phone = "918590985286"; // Default
@@ -107,10 +121,24 @@ const CartDrawer = () => {
                     )}
                 </div>
 
-                <div className="p-6 border-t border-stone-100 bg-stone-50/50">
-                    <div className="flex justify-between items-center mb-6">
-                        <span className="text-charcoal/60 uppercase text-xs tracking-widest font-bold">Subtotal</span>
-                        <span className="text-xl font-serif text-charcoal">₹{subtotal}</span>
+                <div className="p-6 border-t border-stone-100 bg-stone-50/50 space-y-4">
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center text-sm text-charcoal/60 uppercase tracking-widest">
+                            <span>Subtotal</span>
+                            <span>₹{subtotal}</span>
+                        </div>
+                        {bulkDiscount > 0 && (
+                            <div className="flex justify-between items-center text-sage font-medium bg-sage/10 p-2 rounded-lg border border-sage/20 animate-in fade-in slide-in-from-top-1 duration-300">
+                                <span className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold">
+                                    <Tag className="w-3 h-3" /> Buy {applicableOffer?.minQuantity}+ Offer
+                                </span>
+                                <span>- ₹{bulkDiscount}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-center pt-2 border-t border-stone-200">
+                            <span className="text-charcoal/80 uppercase text-xs tracking-widest font-bold">Total</span>
+                            <span className="text-xl font-serif text-charcoal">₹{finalTotal}</span>
+                        </div>
                     </div>
                     <button
                         onClick={() => setCheckoutOpen(true)}

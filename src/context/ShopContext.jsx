@@ -9,6 +9,7 @@ export const useShop = () => useContext(ShopContext);
 
 export const ShopProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
+    const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState(() => {
         try {
@@ -25,6 +26,15 @@ export const ShopProvider = ({ children }) => {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             setLoading(false);
+        });
+        return unsubscribe;
+    }, []);
+
+    // Fetch Offers
+    useEffect(() => {
+        const q = query(collection(db, "offers"), orderBy("minQuantity", "desc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setOffers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         });
         return unsubscribe;
     }, []);
@@ -62,6 +72,11 @@ export const ShopProvider = ({ children }) => {
     const clearCart = () => setCart([]);
 
     const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+    const totalQuantity = cart.reduce((acc, item) => acc + item.qty, 0);
+
+    // Calculate Bulk Discount
+    const applicableOffer = offers.find(o => totalQuantity >= o.minQuantity);
+    const bulkDiscount = applicableOffer ? applicableOffer.discountAmount : 0;
 
     const value = {
         products,
@@ -74,6 +89,10 @@ export const ShopProvider = ({ children }) => {
         setIsCartOpen,
         isCartOpen,
         subtotal,
+        bulkDiscount,
+        totalQuantity,
+        applicableOffer,
+        finalTotal: subtotal - bulkDiscount,
         appLoaded,
         setAppLoaded
     };
