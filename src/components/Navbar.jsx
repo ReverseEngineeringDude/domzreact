@@ -42,9 +42,9 @@ const Navbar = () => {
                 initial={{ y: -100 }}
                 animate={{ y: visible ? 20 : -100 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="fixed top-0 left-1/2 -translate-x-1/2 z-[200] w-auto pt-4 md:pt-6"
+                className="fixed top-0 inset-x-0 z-[200] flex justify-center pt-4 md:pt-6 pointer-events-none"
             >
-                <div className="glass-heavy rounded-full px-4 md:px-8 py-3 md:py-4 flex items-center gap-6 md:gap-10 shadow-2xl">
+                <div className="glass-heavy rounded-full px-6 md:px-8 py-3 md:py-4 flex items-center gap-6 md:gap-10 shadow-2xl pointer-events-auto">
                     {/* Mobile Menu Toggle */}
                     <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-charcoal/80 hover:text-sage transition-colors">
                         <Menu className="w-6 h-6" />

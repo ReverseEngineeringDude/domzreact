@@ -14,6 +14,7 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 import { useShop } from '../context/ShopContext';
 import SEO from '../components/SEO';
+import ProductCard from '../components/ProductCard';
 import ProductEdit from '../components/ProductEdit';
 
 const Home = () => {
@@ -187,13 +188,40 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* Manifesto Section (Refined) */}
+            {/* Manifesto Section */}
             <section className="py-32 md:py-48 px-6 min-h-[90vh] flex items-center justify-center relative bg-stone-50">
                 <div ref={manifestoRef} className="max-w-5xl mx-auto text-center leading-tight relative z-10">
                     <p className="text-xs font-bold uppercase tracking-[0.3em] text-charcoal/40 mb-12">The Philosophy</p>
                     {"We believe that true beauty is found in the untouched code of nature. No synthetics. No fillers. Just the raw, potent energy of earth, bottled for your skin.".split(" ").map((word, i) => (
                         <span key={i} className="word inline-block mr-[0.25em] text-4xl md:text-7xl font-serif text-charcoal tracking-tight">{word}</span>
                     ))}
+                </div>
+            </section>
+
+            {/* Showcase Section */}
+            <section className="py-32 md:py-48 px-6 bg-white overflow-hidden">
+                <div className="container mx-auto">
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+                        <div className="max-w-xl">
+                            <span className="badge mb-6 inline-block">Boutique Highlight</span>
+                            <h2 className="text-4xl md:text-7xl font-serif font-medium leading-none tracking-tighter text-charcoal">Signature <br /><span className="text-sage italic">Essences</span></h2>
+                        </div>
+                        <Link to="/products" className="group flex items-center gap-3 text-xs font-black uppercase tracking-[0.3em] text-charcoal/40 hover:text-sage transition-colors pb-2 border-b border-charcoal/5 hover:border-sage">
+                            Explore Full Collection <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16 md:gap-x-24 md:gap-y-32">
+                        {products.slice(0, 3).map((p, i) => (
+                            <ProductCard key={p.id} product={p} index={i} />
+                        ))}
+                    </div>
+
+                    <div className="mt-32 md:mt-48 text-center">
+                        <Link to="/products" className="inline-block px-12 py-6 rounded-full bg-charcoal text-white text-[10px] uppercase tracking-[0.4em] font-black hover:bg-sage hover:scale-105 transition-all shadow-2xl">
+                            Visit the Boutique
+                        </Link>
+                    </div>
                 </div>
             </section>
 

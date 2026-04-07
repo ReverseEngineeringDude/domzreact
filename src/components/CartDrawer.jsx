@@ -19,6 +19,7 @@ const CartDrawer = () => {
         bulkDiscount, 
         finalTotal, 
         applicableOffer,
+        totalQuantity,
         isCartOpen, 
         setIsCartOpen, 
         clearCart 
@@ -47,15 +48,29 @@ const CartDrawer = () => {
     }, []);
 
     const handleCheckout = (details, coupon) => {
-        let orderTotal = finalTotal;
-        if (coupon) orderTotal -= coupon.discountAmount;
+        let couponDiscount = 0;
+        if (coupon) {
+            couponDiscount = coupon.discountType === 'percentage' 
+                ? (subtotal * coupon.discountAmount) / 100 
+                : coupon.discountAmount * totalQuantity;
+        }
+        
+        let orderTotal = Math.max(0, finalTotal - couponDiscount);
 
         // Construct WhatsApp Message
         const itemsList = cart.map(i => `- ${i.name} (x${i.qty}): ₹${i.price * i.qty}`).join('%0A');
-        const bulkDiscountText = bulkDiscount > 0 ? `%0A----------%0ABulk Offer Applied: Buy ${applicableOffer?.minQuantity}+ (-₹${bulkDiscount})` : "";
-        const couponText = coupon ? `%0A----------%0ACoupon Applied: ${coupon.code} (-₹${coupon.discountAmount})` : "";
         
-        const message = `*New Order from ${details.name}*%0A%0A*Items:*%0A${itemsList}%0A%0A*Subtotal:* ₹${subtotal}${bulkDiscountText}${couponText}%0A*Total:* ₹${Math.max(0, orderTotal)}%0A%0A*Shipping Details:*%0A${details.address}, ${details.city} - ${details.zip}%0APhone: ${details.phone}`;
+        const bulkOfferInfo = applicableOffer 
+            ? (applicableOffer.discountType === 'percentage' ? `${applicableOffer.discountAmount}%` : `₹${applicableOffer.discountAmount} x ${totalQuantity} items`)
+            : "";
+        const bulkDiscountText = bulkDiscount > 0 ? `%0A----------%0ABulk Offer: ${bulkOfferInfo} (-₹${bulkDiscount})` : "";
+        
+        const couponInfo = coupon 
+            ? (coupon.discountType === 'percentage' ? `${coupon.discountAmount}%` : `₹${coupon.discountAmount} x ${totalQuantity} items`)
+            : "";
+        const couponText = coupon ? `%0A----------%0ACoupon: ${coupon.code} (${couponInfo}) (-₹${couponDiscount})` : "";
+        
+        const message = `*New Order from ${details.name}*%0A%0A*Items:*%0A${itemsList}%0A%0A*Subtotal:* ₹${subtotal}${bulkDiscountText}${couponText}%0A*Total:* ₹${orderTotal}%0A%0A*Shipping Details:*%0A${details.address}, ${details.city} - ${details.zip}%0APhone: ${details.phone}`;
 
         // Redirect to Admin Logic
         let phone = "918590985286"; // Default
@@ -157,6 +172,8 @@ const CartDrawer = () => {
                     onConfirm={handleCheckout}
                     initialData={{}}
                     coupons={coupons}
+                    subtotal={subtotal}
+                    totalQuantity={totalQuantity}
                 />
             )}
         </div>,

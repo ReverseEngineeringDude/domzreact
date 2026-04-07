@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle } from 'lucide-react';
 
-const CheckoutModal = ({ isOpen, onClose, onConfirm, initialData, coupons }) => {
+const CheckoutModal = ({ isOpen, onClose, onConfirm, initialData, coupons, subtotal, totalQuantity }) => {
     const [formData, setFormData] = useState({
         name: initialData.name || "",
         phone: initialData.phone || "",
@@ -23,17 +23,24 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, initialData, coupons }) => 
 
     const handleApplyCoupon = () => {
         setCouponError("");
-        const code = couponCode.trim();
+        const code = couponCode.trim().toUpperCase();
         if (!code) return;
 
-        // Find coupon in coupons list (case sensitive or not? usually case sensitive or uppercase)
-        const found = coupons.find(c => c.code === code);
+        const found = coupons.find(c => c.code.toUpperCase() === code);
         if (found) {
             setAppliedCoupon(found);
         } else {
             setCouponError("Invalid Coupon Code");
             setAppliedCoupon(null);
         }
+    };
+
+    const calculateCouponSaving = () => {
+        if (!appliedCoupon) return 0;
+        if (appliedCoupon.discountType === 'percentage') {
+            return (subtotal * appliedCoupon.discountAmount) / 100;
+        }
+        return appliedCoupon.discountAmount * totalQuantity;
     };
 
     const handleSubmit = (e) => {
@@ -44,6 +51,8 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, initialData, coupons }) => 
         }
         onConfirm(formData, appliedCoupon);
     };
+
+    const saving = calculateCouponSaving();
 
     return (
         <motion.div
@@ -97,7 +106,11 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, initialData, coupons }) => 
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-sage/10 rounded-xl border border-sage/20 flex justify-between items-center text-sage-dark">
                                 <div>
                                     <span className="font-bold block text-charcoal">Coupon Applied!</span>
-                                    <span className="text-xs">Saving ₹{appliedCoupon.discountAmount}</span>
+                                    <span className="text-xs">
+                                        Saving ₹{saving} 
+                                        {appliedCoupon.discountType === 'amount' && ` (₹${appliedCoupon.discountAmount} x ${totalQuantity} items)`}
+                                        {appliedCoupon.discountType === 'percentage' && ` (${appliedCoupon.discountAmount}%)`}
+                                    </span>
                                 </div>
                                 <CheckCircle className="w-5 h-5 text-sage" />
                             </motion.div>

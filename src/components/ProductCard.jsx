@@ -7,8 +7,11 @@ import { useGSAP } from "@gsap/react";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
+import { Link } from 'react-router-dom';
+
 const ProductCard = ({ product, index, onAdd }) => {
     const cardRef = useRef(null);
+    const isShowcase = !onAdd;
 
     useGSAP(() => {
         // Scroll Reveal
@@ -19,7 +22,7 @@ const ProductCard = ({ product, index, onAdd }) => {
             ease: "power3.out",
             scrollTrigger: {
                 trigger: cardRef.current,
-                start: "top 90%", // Trigger when top of card hits 90% of viewport height
+                start: "top 90%",
                 toggleActions: "play none none reverse"
             }
         });
@@ -27,31 +30,41 @@ const ProductCard = ({ product, index, onAdd }) => {
         // Hover Animations (Desktop Only)
         const mm = gsap.matchMedia();
         mm.add("(min-width: 1024px)", () => {
-            // Initial state for desktop is hidden (handled by CSS or set here)
-            gsap.set(cardRef.current.querySelector(".p-btn"), { y: 20, opacity: 0 });
+            if (isShowcase) {
+                // For showcase, maybe just a slight lift?
+                gsap.set(cardRef.current.querySelector(".p-hint"), { y: 10, opacity: 0 });
+            } else {
+                gsap.set(cardRef.current.querySelector(".p-btn"), { y: 20, opacity: 0 });
+            }
         });
 
     }, { scope: cardRef });
 
-    // Hover animations using GSAP context safely inside event handlers
     const onEnter = () => {
         if (window.innerWidth >= 1024) {
-            gsap.to(cardRef.current.querySelector(".p-img"), { scale: 1.08, duration: 0.6, ease: "power2.out" });
-            gsap.to(cardRef.current.querySelector(".p-btn"), { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.7)" });
+            gsap.to(cardRef.current.querySelector(".p-img"), { scale: 1.05, duration: 0.8, ease: "power2.out" });
+            if (isShowcase) {
+                gsap.to(cardRef.current.querySelector(".p-hint"), { y: 0, opacity: 1, duration: 0.4 });
+            } else {
+                gsap.to(cardRef.current.querySelector(".p-btn"), { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.7)" });
+            }
         }
     };
 
     const onLeave = () => {
         if (window.innerWidth >= 1024) {
-            gsap.to(cardRef.current.querySelector(".p-img"), { scale: 1, duration: 0.6, ease: "power2.out" });
-            gsap.to(cardRef.current.querySelector(".p-btn"), { y: 20, opacity: 0, duration: 0.3, ease: "power2.in" });
+            gsap.to(cardRef.current.querySelector(".p-img"), { scale: 1, duration: 0.8, ease: "power2.out" });
+            if (isShowcase) {
+                gsap.to(cardRef.current.querySelector(".p-hint"), { y: 10, opacity: 0, duration: 0.3 });
+            } else {
+                gsap.to(cardRef.current.querySelector(".p-btn"), { y: 20, opacity: 0, duration: 0.3, ease: "power2.in" });
+            }
         }
     };
 
-    return (
+    const Content = (
         <div
-            ref={cardRef}
-            className={`group relative flex flex-col items-center ${index % 2 !== 0 ? "md:translate-y-12" : ""}`} // Staggered layout helper
+            className={`group relative flex flex-col items-center ${index % 2 !== 0 ? "md:translate-y-12" : ""}`}
             onMouseEnter={onEnter}
             onMouseLeave={onLeave}
         >
@@ -60,31 +73,47 @@ const ProductCard = ({ product, index, onAdd }) => {
                 {product.image ? (
                     <img
                         src={product.image}
-                        className="p-img w-full h-full object-cover mix-blend-multiply"
-                        style={{ transform: "scale(1)" }}
+                        className="p-img w-full h-full object-cover mix-blend-multiply transition-transform duration-700"
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-charcoal/20 bg-stone-100">No Image</div>
+                    <div className="w-full h-full flex items-center justify-center text-charcoal/20 bg-stone-100 italic font-serif">Pure Essence</div>
                 )}
 
                 {/* Glossy Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent pointer-events-none opacity-60" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent pointer-events-none opacity-40" />
 
-                {/* Quick Add Overlay */}
-                <div
-                    onClick={(e) => { e.stopPropagation(); onAdd(product); }}
-                    className="p-btn absolute bottom-4 right-4 w-12 h-12 bg-charcoal text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-sage transition-colors opacity-100 translate-y-0 lg:opacity-0 lg:translate-y-4"
-                >
-                    <Plus className="w-5 h-5" />
-                </div>
+                {/* Interaction Overlay */}
+                {!isShowcase ? (
+                    <div
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAdd(product); }}
+                        className="p-btn absolute bottom-6 right-6 w-12 h-12 bg-charcoal text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-sage transition-all duration-300 transform lg:opacity-0 lg:translate-y-4"
+                    >
+                        <Plus className="w-5 h-5" />
+                    </div>
+                ) : (
+                    <div className="p-hint absolute inset-0 flex items-center justify-center bg-charcoal/5 backdrop-blur-[2px] opacity-0 transition-opacity duration-500">
+                        <span className="bg-white/90 text-charcoal px-6 py-2 rounded-full text-[10px] uppercase tracking-[.2em] font-bold shadow-xl border border-white/20">View Collection</span>
+                    </div>
+                )}
             </div>
 
             {/* Details */}
             <div className="text-center">
-                <h3 className="text-2xl font-serif text-charcoal mb-1">{product.name}</h3>
-                <p className="text-[10px] text-charcoal/40 uppercase tracking-[0.2em] mb-3 font-medium">Beauty Essence</p>
-                <span className="text-lg font-medium text-sage">₹{product.price}</span>
+                <span className="text-[9px] text-sage font-black uppercase tracking-[0.3em] mb-2 block">Available Ritual</span>
+                <h3 className="text-2xl font-serif text-charcoal mb-1 leading-tight">{product.name}</h3>
+                <p className="text-[10px] text-charcoal/30 uppercase tracking-[0.1em] mb-3 font-medium">Small Batch Bottling</p>
+                <span className="text-lg font-medium text-sage/80 italic font-serif">₹{product.price}</span>
             </div>
+        </div>
+    );
+
+    return (
+        <div ref={cardRef}>
+            {isShowcase ? (
+                <Link to="/products" className="block cursor-pointer">
+                    {Content}
+                </Link>
+            ) : Content}
         </div>
     );
 };

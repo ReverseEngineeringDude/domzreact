@@ -76,7 +76,13 @@ export const ShopProvider = ({ children }) => {
 
     // Calculate Bulk Discount
     const applicableOffer = offers.find(o => totalQuantity >= o.minQuantity);
-    const bulkDiscount = applicableOffer ? applicableOffer.discountAmount : 0;
+    const bulkDiscount = applicableOffer 
+        ? (applicableOffer.discountType === 'percentage' 
+            ? (subtotal * parseFloat(applicableOffer.discountAmount)) / 100 
+            : (applicableOffer.discountType === 'amount' 
+                ? parseFloat(applicableOffer.discountAmount) * totalQuantity 
+                : parseFloat(applicableOffer.discountAmount))) // Legacy fallback: Flat Amount
+        : 0;
 
     const value = {
         products,

@@ -36,15 +36,16 @@ const Admin = () => {
     const [uploading, setUploading] = useState(false);
     const [logs, setLogs] = useState([]);
 
-    // Coupon Form State
     const [couponCode, setCouponCode] = useState("");
     const [adminName, setAdminName] = useState("");
     const [adminNumber, setAdminNumber] = useState("8590985286");
     const [discountAmount, setDiscountAmount] = useState("");
+    const [couponType, setCouponType] = useState("amount"); // "amount" or "percentage"
 
     // Offer Form State
     const [minQuantity, setMinQuantity] = useState("");
     const [offerDiscount, setOfferDiscount] = useState("");
+    const [offerType, setOfferType] = useState("amount"); // "amount" or "percentage"
 
     const addLog = (msg) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
 
@@ -173,6 +174,7 @@ const Admin = () => {
                 adminName,
                 adminNumber,
                 discountAmount: parseFloat(discountAmount),
+                discountType: couponType,
                 createdAt: serverTimestamp()
             });
             setCouponCode(""); setAdminName(""); setAdminNumber("8590985286"); setDiscountAmount("");
@@ -188,6 +190,7 @@ const Admin = () => {
             await addDoc(collection(db, "offers"), {
                 minQuantity: parseInt(minQuantity),
                 discountAmount: parseFloat(offerDiscount),
+                discountType: offerType,
                 createdAt: serverTimestamp(),
                 createdBy: user.uid
             });
@@ -346,9 +349,18 @@ const Admin = () => {
                                         <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Minimum Quantity</label>
                                         <input type="number" value={minQuantity} onChange={e => setMinQuantity(e.target.value)} placeholder="e.g. 3" required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Discount Amount (₹)</label>
-                                        <input type="number" value={offerDiscount} onChange={e => setOfferDiscount(e.target.value)} placeholder="e.g. 500" required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Discount Mode</label>
+                                            <div className="flex bg-stone-100 p-1 rounded-lg">
+                                                <button type="button" onClick={() => setOfferType("amount")} className={cn("flex-1 py-1 text-[10px] uppercase font-black rounded-md transition-all", offerType === "amount" ? "bg-white text-charcoal shadow-sm" : "text-charcoal/40")}>₹ Amount</button>
+                                                <button type="button" onClick={() => setOfferType("percentage")} className={cn("flex-1 py-1 text-[10px] uppercase font-black rounded-md transition-all", offerType === "percentage" ? "bg-white text-charcoal shadow-sm" : "text-charcoal/40")}>% Percent</button>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Value</label>
+                                            <input type="number" value={offerDiscount} onChange={e => setOfferDiscount(e.target.value)} placeholder={offerType === 'amount' ? "e.g. 50" : "e.g. 10"} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                                        </div>
                                     </div>
                                     <button type="submit" className="w-full py-3 bg-charcoal text-white font-bold rounded-lg hover:bg-sage transition-colors">Create Offer Rule</button>
                                 </form>
@@ -364,7 +376,7 @@ const Admin = () => {
                                         <div key={o.id} className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex items-center justify-between">
                                             <div>
                                                 <h4 className="font-bold text-charcoal">Buy {o.minQuantity}+ Items</h4>
-                                                <p className="text-sage font-bold">Discount: ₹{o.discountAmount}</p>
+                                                <p className="text-sage font-bold">Discount: {o.discountType === 'percentage' ? `${o.discountAmount}%` : `₹${o.discountAmount} each`}</p>
                                             </div>
                                             <button onClick={() => handleDeleteOffer(o.id)} className="p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                                                 <Trash2 className="w-4 h-4" />
@@ -395,9 +407,18 @@ const Admin = () => {
                                         <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Admin Phone Number</label>
                                         <input value={adminNumber} onChange={e => setAdminNumber(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Discount Amount (₹)</label>
-                                        <input type="number" value={discountAmount} onChange={e => setDiscountAmount(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Coupon Mode</label>
+                                            <div className="flex bg-stone-100 p-1 rounded-lg">
+                                                <button type="button" onClick={() => setCouponType("amount")} className={cn("flex-1 py-1 text-[10px] uppercase font-black rounded-md transition-all", couponType === "amount" ? "bg-white text-charcoal shadow-sm" : "text-charcoal/40")}>₹ Amount</button>
+                                                <button type="button" onClick={() => setCouponType("percentage")} className={cn("flex-1 py-1 text-[10px] uppercase font-black rounded-md transition-all", couponType === "percentage" ? "bg-white text-charcoal shadow-sm" : "text-charcoal/40")}>% Percent</button>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-xs font-bold text-charcoal/50 uppercase tracking-wider block mb-1">Value</label>
+                                            <input type="number" value={discountAmount} onChange={e => setDiscountAmount(e.target.value)} required className="w-full p-2 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-sage" />
+                                        </div>
                                     </div>
                                     <button type="submit" className="w-full py-3 bg-charcoal text-white font-bold rounded-lg hover:bg-sage transition-colors">Create Coupon</button>
                                 </form>
@@ -414,7 +435,7 @@ const Admin = () => {
                                             <div>
                                                 <h4 className="font-bold text-charcoal">{c.code}</h4>
                                                 <p className="text-xs text-charcoal/50">Admin: {c.adminName} ({c.adminNumber})</p>
-                                                <p className="text-sage font-bold font-xs">Discount: ₹{c.discountAmount}</p>
+                                                <p className="text-sage font-bold text-xs uppercase tracking-tight">Discount: {c.discountType === 'percentage' ? `${c.discountAmount}% off Order` : `₹${c.discountAmount} off each`}</p>
                                             </div>
                                             <button onClick={() => handleDeleteCoupon(c.id)} className="p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                                                 <Trash2 className="w-4 h-4" />
