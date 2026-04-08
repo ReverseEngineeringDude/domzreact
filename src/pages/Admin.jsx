@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from '../assets/firebase';
-import { collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, setDoc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
 import { useNavigate, Navigate } from 'react-router-dom';
-import { LogOut, Loader, Upload, Trash2 } from 'lucide-react';
+import { LogOut, Loader, Upload, Trash2, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { motion } from 'framer-motion';
@@ -47,7 +47,60 @@ const Admin = () => {
     const [offerDiscount, setOfferDiscount] = useState("");
     const [offerType, setOfferType] = useState("amount"); // "amount" or "percentage"
 
+    // Settings State
+    const [heroImageUrl, setHeroImageUrl] = useState("");
+    const [heroFile, setHeroFile] = useState(null);
+    const [heroPreviewUrl, setHeroPreviewUrl] = useState(null);
+    const [settingsSaving, setSettingsSaving] = useState(false);
+
     const addLog = (msg) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
+
+    // ... (rest of search/logic impacts)
+
+    // Fetch Settings
+    useEffect(() => {
+        if (!user) return;
+        const q = query(collection(db, "settings"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const global = snapshot.docs.find(d => d.id === 'global')?.data();
+            if (global?.heroImageUrl) setHeroImageUrl(global.heroImageUrl);
+        });
+        return unsubscribe;
+    }, [user]);
+
+    const handleHeroFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setHeroFile(file);
+        setHeroPreviewUrl(URL.createObjectURL(file));
+    };
+
+    const handleUpdateSettings = async (e) => {
+        e.preventDefault();
+        setSettingsSaving(true);
+        try {
+            let finalUrl = heroImageUrl;
+
+            if (heroFile) {
+                // Compress and convert to Base64
+                finalUrl = await compressImage(heroFile);
+            }
+
+            await setDoc(doc(db, "settings", "global"), {
+                heroImageUrl: finalUrl,
+                updatedAt: serverTimestamp(),
+                updatedBy: user.uid
+            }, { merge: true });
+            
+            setHeroFile(null);
+            setHeroPreviewUrl(null);
+            alert("Settings Updated!");
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            setSettingsSaving(false);
+        }
+    };
 
     // Auth Check
     useEffect(() => {
@@ -242,9 +295,12 @@ const Admin = () => {
                 <h2 className="text-2xl font-serif font-bold mb-10">Domz Admin</h2>
                 <div className="text-xs opacity-50 mb-4">User: {user?.email}</div>
                 <nav className="flex-1 space-y-2">
-                    <div onClick={() => setActiveTab("products")} className={cn("p-3 rounded-lg cursor-pointer transition-colors", activeTab === "products" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Products</div>
-                    <div onClick={() => setActiveTab("coupons")} className={cn("p-3 rounded-lg cursor-pointer transition-colors", activeTab === "coupons" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Coupons</div>
-                    <div onClick={() => setActiveTab("offers")} className={cn("p-3 rounded-lg cursor-pointer transition-colors", activeTab === "offers" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Bulk Offers</div>
+                    <div onClick={() => setActiveTab("products")} className={cn("p-3 rounded-lg cursor-pointer transition-colors flex items-center gap-2", activeTab === "products" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Products</div>
+                    <div onClick={() => setActiveTab("coupons")} className={cn("p-3 rounded-lg cursor-pointer transition-colors flex items-center gap-2", activeTab === "coupons" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Coupons</div>
+                    <div onClick={() => setActiveTab("offers")} className={cn("p-3 rounded-lg cursor-pointer transition-colors flex items-center gap-2", activeTab === "offers" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>Bulk Offers</div>
+                    <div onClick={() => setActiveTab("settings")} className={cn("p-3 rounded-lg cursor-pointer transition-colors flex items-center gap-2", activeTab === "settings" ? "bg-white/20 text-white" : "text-white/50 hover:text-white hover:bg-white/5")}>
+                        <Settings className="w-4 h-4" /> App Settings
+                    </div>
                 </nav>
                 <button onClick={logout} className="flex items-center gap-2 text-white/50 hover:text-white mt-auto">
                     <LogOut className="w-4 h-4" /> Logout
@@ -259,10 +315,11 @@ const Admin = () => {
                 </header>
 
                 {/* Mobile Tabs */}
-                <div className="flex gap-4 mb-6 md:hidden">
-                    <button onClick={() => setActiveTab("products")} className={cn("px-4 py-2 rounded-full font-bold text-sm", activeTab === "products" ? "bg-charcoal text-white" : "bg-white text-charcoal")}>Products</button>
-                    <button onClick={() => setActiveTab("coupons")} className={cn("px-4 py-2 rounded-full font-bold text-sm", activeTab === "coupons" ? "bg-charcoal text-white" : "bg-white text-charcoal")}>Coupons</button>
-                    <button onClick={() => setActiveTab("offers")} className={cn("px-4 py-2 rounded-full font-bold text-sm", activeTab === "offers" ? "bg-charcoal text-white" : "bg-white text-charcoal")}>Offers</button>
+                <div className="flex gap-2 mb-6 md:hidden overflow-x-auto pb-2 scrollbar-hide">
+                    <button onClick={() => setActiveTab("products")} className={cn("px-4 py-2 rounded-full font-bold text-xs shrink-0", activeTab === "products" ? "bg-charcoal text-white" : "bg-white text-charcoal shadow-sm")}>Products</button>
+                    <button onClick={() => setActiveTab("coupons")} className={cn("px-4 py-2 rounded-full font-bold text-xs shrink-0", activeTab === "coupons" ? "bg-charcoal text-white" : "bg-white text-charcoal shadow-sm")}>Coupons</button>
+                    <button onClick={() => setActiveTab("offers")} className={cn("px-4 py-2 rounded-full font-bold text-xs shrink-0", activeTab === "offers" ? "bg-charcoal text-white" : "bg-white text-charcoal shadow-sm")}>Offers</button>
+                    <button onClick={() => setActiveTab("settings")} className={cn("px-4 py-2 rounded-full font-bold text-xs shrink-0", activeTab === "settings" ? "bg-charcoal text-white" : "bg-white text-charcoal shadow-sm")}>Settings</button>
                 </div>
 
                 {activeTab === "products" && (
@@ -444,6 +501,83 @@ const Admin = () => {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "settings" && (
+                    <div className="max-w-2xl mx-auto py-10">
+                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-stone-200">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="p-3 bg-sage/10 rounded-2xl text-sage">
+                                    <Settings className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-serif font-bold text-charcoal">App Settings</h3>
+                                    <p className="text-sm text-charcoal/40">Manage global brand visuals and configurations</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleUpdateSettings} className="space-y-8">
+                                <div className="space-y-4">
+                                    <label className="text-xs font-bold text-charcoal/50 uppercase tracking-[0.2em] block">Hero Home Image</label>
+                                    <div className="flex flex-col md:flex-row gap-4">
+                                        <div className="flex-1 space-y-2">
+                                            <input 
+                                                value={heroImageUrl} 
+                                                onChange={e => {
+                                                    setHeroImageUrl(e.target.value);
+                                                    if (e.target.value) { setHeroFile(null); setHeroPreviewUrl(null); }
+                                                }} 
+                                                placeholder="/domz_hero.png" 
+                                                className="w-full p-4 bg-stone-50 rounded-xl border border-stone-200 outline-none focus:border-sage font-mono text-xs" 
+                                            />
+                                            <p className="text-[10px] text-charcoal/30 pl-2 italic">Provide a URL or absolute path</p>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="relative h-full group">
+                                                <input type="file" accept="image/*" onChange={handleHeroFileSelect} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
+                                                <div className="h-full p-3 border-2 border-dashed border-stone-200 rounded-xl flex items-center justify-center gap-2 text-stone-400 group-hover:bg-stone-50 transition-all">
+                                                    <Upload className="w-4 h-4" />
+                                                    <span className="text-xs font-bold uppercase tracking-widest">{heroFile ? "Change File" : "Upload Image"}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {(heroPreviewUrl || heroImageUrl) && (
+                                        <div className="mt-4 p-4 border border-stone-100 rounded-2xl bg-stone-50 overflow-hidden relative group">
+                                            <div className="text-[8px] uppercase tracking-widest text-charcoal/40 mb-2 pl-2">Live Preview Overlay</div>
+                                            <div className="w-48 h-48 mx-auto rounded-full overflow-hidden border-2 border-white shadow-xl bg-white">
+                                                <img 
+                                                    src={heroPreviewUrl || heroImageUrl} 
+                                                    className="w-full h-full object-cover" 
+                                                    onError={(e) => e.target.src = "https://via.placeholder.com/300?text=Invalid+Image"} 
+                                                />
+                                            </div>
+                                            {heroFile && (
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => { setHeroFile(null); setHeroPreviewUrl(null); }}
+                                                    className="absolute top-4 right-4 p-2 bg-white/80 hover:bg-white text-stone-400 hover:text-red-500 rounded-full shadow-sm transition-all"
+                                                >
+                                                    <Trash2 className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="pt-4">
+                                    <button 
+                                        disabled={settingsSaving} 
+                                        type="submit" 
+                                        className="w-full py-4 bg-charcoal text-white font-bold rounded-2xl hover:bg-sage transition-all disabled:opacity-50 shadow-lg"
+                                    >
+                                        {settingsSaving ? "Updating Brand..." : "Save Brand Settings"}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 )}

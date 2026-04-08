@@ -19,6 +19,22 @@ export const ShopProvider = ({ children }) => {
     });
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [appLoaded, setAppLoaded] = useState(false);
+    const [settings, setSettings] = useState({
+        heroImageUrl: "/domz_hero.png"
+    });
+
+    // Fetch Settings
+    useEffect(() => {
+        const q = query(collection(db, "settings"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (!snapshot.empty) {
+                // Assuming a single 'global' settings doc
+                const globalSettings = snapshot.docs.find(d => d.id === 'global')?.data();
+                if (globalSettings) setSettings(prev => ({ ...prev, ...globalSettings }));
+            }
+        });
+        return unsubscribe;
+    }, []);
 
     // Fetch Products
     useEffect(() => {
@@ -100,7 +116,8 @@ export const ShopProvider = ({ children }) => {
         applicableOffer,
         finalTotal: subtotal - bulkDiscount,
         appLoaded,
-        setAppLoaded
+        setAppLoaded,
+        settings
     };
 
     return (

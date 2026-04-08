@@ -52,10 +52,17 @@ const Footer = () => {
                 {/* Bottom Bar */}
                 <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between text-xs text-white/20 uppercase tracking-widest gap-4">
                     <p>&copy; 2026 Domz Naturelle.</p>
-                    <div className="flex items-center gap-2">
-                        <span>Crafted with</span>
-                        <Heart className="w-3 h-3 text-sage fill-sage animate-pulse" />
-                        <span>by Domz</span>
+                    <div className="flex items-center gap-3">
+                        <span className="opacity-40">Developed by</span>
+                        <a 
+                            href="https://instagram.com/red_byte.sec" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/10 hover:border-sage/30 hover:bg-white/10 transition-all group"
+                        >
+                            <span className="font-bold text-sage group-hover:text-white transition-colors">RedCoding</span>
+                            <Instagram className="w-3 h-3 text-white/20 group-hover:text-sage transition-all group-hover:scale-110" />
+                        </a>
                     </div>
                 </div>
             </div>

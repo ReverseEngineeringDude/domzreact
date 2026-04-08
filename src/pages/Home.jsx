@@ -3,7 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import heroImage from '../assets/hero-bottle.png';
+// import heroImage from '../assets/hero-bottle.png';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
@@ -18,7 +18,7 @@ import ProductCard from '../components/ProductCard';
 import ProductEdit from '../components/ProductEdit';
 
 const Home = () => {
-    const { products, appLoaded } = useShop();
+    const { products, appLoaded, settings, loading } = useShop();
     const containerRef = useRef(null);
     const textRef = useRef(null);
     const imageRef = useRef(null);
@@ -142,9 +142,9 @@ const Home = () => {
                 <div className="container mx-auto px-6 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                     {/* Typography */}
                     <div ref={textRef} className="lg:col-span-7 flex flex-col justify-center text-center lg:text-left pt-20 lg:pt-0">
-                        <div className="mb-6 flex justify-center lg:justify-start">
+                        {/* <div className="mb-6 flex justify-center lg:justify-start">
                             <span className="badge px-4 py-1.5 rounded-full border border-charcoal/10 text-[10px] uppercase tracking-[0.25em] text-charcoal/60 bg-white/40 backdrop-blur-md shadow-sm">Organic Collection 2026</span>
-                        </div>
+                        </div> */}
 
                         <h1 className="text-[13vw] lg:text-[8vw] leading-[0.85] font-serif font-medium text-charcoal mb-8 tracking-tighter overflow-hidden">
                             <div className="flex justify-center lg:justify-start">
@@ -161,16 +161,17 @@ const Home = () => {
                     </div>
 
                     {/* Visual Composition */}
-                    <div className="lg:col-span-5 relative h-[50vh] lg:h-[80vh] flex items-center justify-center">
-                        <div ref={imageRef} className="relative w-full max-w-md aspect-[3/4]">
+                    <div className="lg:col-span-5 relative h-[40vh] lg:h-[80vh] flex items-center justify-center">
+                        <div ref={imageRef} className="relative w-[220px] md:w-[320px] lg:w-full lg:max-w-sm aspect-square">
                             {/* Image Container */}
-                            <div className="absolute inset-4 rounded-t-[10rem] rounded-b-[4rem] overflow-hidden bg-white shadow-2xl z-10 border border-white/20">
-                                <img src={heroImage} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/20 to-transparent mix-blend-multiply" />
+                            <div className="absolute inset-0 rounded-full overflow-hidden bg-white shadow-2xl z-10 border-4 border-white/40">
+                                <img src={settings?.heroImageUrl || "/domz_hero.png"} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-stone-900/5 mix-blend-multiply" />
                             </div>
 
                             {/* Decorative Elements */}
-                            <div className="absolute -inset-2 border border-sage/30 rounded-t-[10rem] rounded-b-[4rem] z-0" />
+                            <div className="absolute -inset-4 border border-sage/20 rounded-full z-0 animate-pulse-slow" />
+                            <div className="absolute -inset-8 border border-sage/10 rounded-full z-0" />
                         </div>
                     </div>
                 </div>
@@ -201,10 +202,12 @@ const Home = () => {
             {/* Showcase Section */}
             <section className="py-32 md:py-48 px-6 bg-white overflow-hidden">
                 <div className="container mx-auto">
-                    <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
-                        <div className="max-w-xl">
-                            <span className="badge mb-6 inline-block">Boutique Highlight</span>
-                            <h2 className="text-4xl md:text-7xl font-serif font-medium leading-none tracking-tighter text-charcoal">Signature <br /><span className="text-sage italic">Essences</span></h2>
+                    <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 md:mb-24 gap-10 text-center md:text-left">
+                        <div className="max-w-2xl px-4 md:px-0">
+                            <span className="badge mb-6 inline-block mx-auto md:mx-0">Boutique Highlight</span>
+                            <h2 className="text-[12vw] md:text-7xl font-serif font-medium leading-[1.1] md:leading-none tracking-tighter text-charcoal">
+                                Signature <span className="text-sage italic block md:inline">Essences</span>
+                            </h2>
                         </div>
                         <Link to="/products" className="group flex items-center gap-3 text-xs font-black uppercase tracking-[0.3em] text-charcoal/40 hover:text-sage transition-colors pb-2 border-b border-charcoal/5 hover:border-sage">
                             Explore Full Collection <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
